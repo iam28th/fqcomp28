@@ -32,4 +32,26 @@ target_link_libraries(fqzcomp28 PRIVATE
     CLI11::CLI11
 )
 
-target_compile_options(fqzcomp28 PRIVATE -DSEQAN3_DISABLE_NEWER_COMPILER_DIAGNOSTIC)
+# mark SeqAn3 include folder as 'system', so that its headers won't yield warnings  
+target_include_directories(fqzcomp28 SYSTEM PRIVATE 
+    $<TARGET_PROPERTY:seqan3::seqan3,INTERFACE_INCLUDE_DIRECTORIES>
+)
+
+target_compile_definitions(fqzcomp28 PRIVATE SEQAN3_DISABLE_NEWER_COMPILER_DIAGNOSTIC)
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU") 
+    target_compile_options(fqzcomp28 PRIVATE 
+        -Wall
+        -Wconversion
+        -Wsign-conversion
+        -Wold-style-cast
+        -Wcast-align
+        -Wextra
+        -frecord-gcc-switches  # to retain certain flags in the executable
+        -g3
+        $<$<CONFIG:DEBUG>:-O0>
+    )
+    target_link_options(fqzcomp28 PRIVATE
+        -frecord-gcc-switches
+    )
+endif()

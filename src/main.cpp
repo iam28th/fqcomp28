@@ -3,7 +3,6 @@
 #include <seqan3/io/sequence_file/input.hpp>
 
 int main(int argc, char **argv) {
-
   CLI::App app;
   addOptions(&app);
 
