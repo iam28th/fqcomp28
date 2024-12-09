@@ -11,14 +11,14 @@ run-clang-tidy -h 2> /dev/null 1>&2
 
 ct_code=$?
 if [[ $ct_code -ne 0 ]]; then
-        # if clang-format is not present on the system,
+        # if clang-tidy is not present on the system,
         # only print warning message
         readonly MESSAGE="WARN: clang-tidy not found, static analysis skipped"
         echo $MESSAGE
 else
-        readonly staged_files=$(git diff --cached --name-only)
+        # TODO: run only on files that were changed since divergance
         cmake -S src -B build 2> /dev/null 1>&2 || echo "error during build"
-        run-clang-tidy -p build -warnings-as-errors=* -j 4 "$staged_files" || exit 1
+        run-clang-tidy -p build -warnings-as-errors=* -j 4 || exit 1
 fi
 
 echo "### ...pre-push end"
