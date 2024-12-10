@@ -1,5 +1,6 @@
 include (FetchContent)
 
+# TODO: use installed dependancies where possible
 FetchContent_Declare (
     seqan3_fetch_content
     GIT_REPOSITORY "https://github.com/seqan/seqan3.git"

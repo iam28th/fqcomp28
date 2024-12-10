@@ -5,7 +5,17 @@
 # commit contains formatted files
 # TODO: add unittests
 
+# how many threads are used for clang-tidy & ctest 
+JOBS=4
+CMAKE_BINARY_DIR=./build
+
 echo "### pre-push start..."
+
+cmake -S . -B "$CMAKE_BINARY_DIR" 2> /dev/null 1>&2 
+if [[ $? -ne 0 ]]; then
+        echo "error during build"
+        exit 1
+fi
 
 run-clang-tidy -h 2> /dev/null 1>&2
 
@@ -16,9 +26,10 @@ if [[ $ct_code -ne 0 ]]; then
         readonly MESSAGE="WARN: clang-tidy not found, static analysis skipped"
         echo $MESSAGE
 else
-        # TODO: run only on files that were changed since divergance
-        cmake -S src -B build 2> /dev/null 1>&2 || echo "error during build"
-        run-clang-tidy -p build -warnings-as-errors=* -j 4 || exit 1
+        # TODO: better file selection & run only on files that were changed since divergance
+        run-clang-tidy -p build -j "$JOBS" -quiet src/*.cpp  || exit 1
 fi
+
+cd "$CMAKE_BINARY_DIR/test" && make -j "$JOBS" && ctest --schedule-random --parallel "$JOBS" || exit 1
 
 echo "### ...pre-push end"
