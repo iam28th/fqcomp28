@@ -7,9 +7,12 @@ add_library(fqzcomp28Core OBJECT
     process.h
     settings.h
 )
+
+
 target_link_libraries(fqzcomp28Core PRIVATE 
     seqan3::seqan3 
     CLI11::CLI11
+    libzstd_static
 )
 
 # mark SeqAn3 include folder as 'system', so that its headers won't yield warnings  
