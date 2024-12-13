@@ -3,27 +3,40 @@ include(${CMAKE_SOURCE_DIR}/cmake/Dependencies.cmake)
 add_library(fqzcomp28Core OBJECT
     app.cpp
     app.h
+    archive.cpp
+    archive.h
+    compressed_buffers.cpp
+    compressed_buffers.h
+    defs.h
+    fastq_io.cpp
+    fastq_io.h
+    fse_compressor.h
+    headers.cpp
+    headers.h
     process.cpp
     process.h
     settings.h
+    utils.cpp
+    utils.h
 )
+
+target_include_directories(fqzcomp28Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 target_link_libraries(fqzcomp28Core PRIVATE 
-    seqan3::seqan3 
     CLI11::CLI11
     libzstd_static
 )
 
-# mark SeqAn3 include folder as 'system', so that its headers won't yield warnings  
+# mark include folders as 'system', so that the headers don't yield warnings  
 target_include_directories(fqzcomp28Core SYSTEM PRIVATE 
-    $<TARGET_PROPERTY:seqan3::seqan3,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:libzstd_static,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
-target_compile_definitions(fqzcomp28Core PRIVATE SEQAN3_DISABLE_NEWER_COMPILER_DIAGNOSTIC)
-
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU") 
-    target_compile_options(fqzcomp28Core PRIVATE 
+    # public so that fqzcomp28 executable and unit_tests 
+    # also have these flags
+    target_compile_options(fqzcomp28Core PUBLIC
         -Wall
         -Wconversion
         -Wsign-conversion

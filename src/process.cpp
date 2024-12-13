@@ -2,8 +2,6 @@
 #include "fse_compressor.h"
 #include "settings.h"
 #include <iostream>
-#include <seqan3/core/debug_stream.hpp>
-#include <seqan3/io/sequence_file/input.hpp>
 #include <vector>
 
 /* headers from zstd library */
@@ -40,24 +38,6 @@ void processReads() {
 
   FSE_CTable *ct = FSE_createCTable('T', 5);
   auto tableSymbol = createCTableBuildWksp('T', 5);
-
-#if 1
-  auto set = Settings::getInstance();
-
-  seqan3::sequence_file_input file_in{set->non_storable.mates1};
-
-  // Retrieve the sequences and ids.
-  for (const auto &[seq, id, qual] : file_in) {
-    // works with both fastq and fasta
-    seqan3::debug_stream << "ID:\t" << id << '\n';
-    seqan3::debug_stream << "SEQ:\t" << seq << '\n';
-    seqan3::debug_stream << "Qual.\t" << qual
-                         << '\n'; // qual is empty for FASTA files
-  }
-
-  std::size_t tot_name_len = 0;
-  std::cout << tot_name_len << '\n';
-#endif
 }
 
 void processArchiveParts() {
