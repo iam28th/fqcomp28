@@ -1,6 +1,9 @@
 #pragma once
 #include <cassert>
+#include <cstdint>
+#include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 namespace fqzcomp28 {
@@ -11,40 +14,41 @@ namespace headers {
  * how we parse header segments
  * TODO: other special fields, e.g. for index sequence
  */
-enum class FieldType { STRING, NUMERIC };
+enum class FieldType { NUMERIC, STRING };
+
+using field_data_t = std::variant<uint64_t, std::string>;
 
 /**
  * describes the structure of a header
  */
 struct HeaderFormatSpeciciation {
-  unsigned n_fields;
+  /**
+   * fills specification (i.e., number and types of fields) from
+   * example header
+   */
+  HeaderFormatSpeciciation(const std::string_view header);
+
   std::vector<FieldType> field_types;
   std::vector<char> separators;
-
-  HeaderFormatSpeciciation(const std::string_view header) {
-    assert(header[0] == '@');
-    /* for now - treat entire header as a single STRING field */
-    n_fields = 1;
-    field_types.push_back(FieldType::STRING);
-
-    assert(separators.size() == n_fields - 1);
-  }
+  auto n_fields() const { return field_types.size(); }
 };
 
 /**
  * holds a certain field of multiple headers
  */
 struct FieldStorage {
-  static constexpr unsigned char SEPARATOR = 0;
   /**
    * for STRING - if the field' value is the same as
    * in the previous header, store 0 in `isDifferent`
-   * else - store 1 in `repeatFlag` and value + separator in `content`
+   * else - store 1 in `repeatFlag`, value in `content`
+   * and value's length in `contentLength`
    *
-   * for NUMERIC - store delta with the previous header as 2 bytes
+   * for NUMERIC - store delta with the previous
+   * header as 2 bytes in `content`
    * */
   std::vector<unsigned char> repeatFlag;
   std::vector<unsigned char> content;
+  std::vector<unsigned char> contentLength;
 
   void clear() {
     repeatFlag.clear();

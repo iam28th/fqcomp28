@@ -8,11 +8,15 @@ add_library(fqzcomp28Core OBJECT
     compressed_buffers.cpp
     compressed_buffers.h
     defs.h
+    encoding_context.cpp
+    encoding_context.h
     fastq_io.cpp
     fastq_io.h
     fse_compressor.h
     headers.cpp
     headers.h
+    prepare.cpp
+    prepare.h
     process.cpp
     process.h
     settings.h

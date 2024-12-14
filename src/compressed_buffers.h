@@ -6,6 +6,8 @@ namespace fqzcomp28 {
 
 struct CompressedBuffers {
 
+  CompressedBuffers(headers::HeaderFormatSpeciciation fmt) : fmt_(fmt) {}
+
   std::vector<unsigned char> seq, qual;
   std::vector<headers::FieldStorage> header_fields;
 
@@ -15,6 +17,9 @@ struct CompressedBuffers {
     for (auto &hf : header_fields)
       hf.clear();
   }
+
+private:
+  headers::HeaderFormatSpeciciation fmt_;
 };
 
 } // namespace fqzcomp28

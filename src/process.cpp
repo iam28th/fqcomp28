@@ -1,5 +1,9 @@
 #include "app.h"
+#include "compressed_buffers.h"
+#include "defs.h"
+#include "fastq_io.h"
 #include "fse_compressor.h"
+#include "prepare.h"
 #include "settings.h"
 #include <iostream>
 #include <vector>
@@ -34,10 +38,27 @@ int startProgram(int argc, char **argv) {
 
 namespace fqzcomp28 {
 void processReads() {
-  std::cout << "hehe I'm compressing" << std::endl;
+  // parse the first header
 
+  const auto set = Settings::getInstance();
+  const auto mates1 = set->non_storable.mates1;
+
+  const DatasetMeta meta = analyzeDataset(mates1, set->sample_chunk_size());
+
+  FastqChunk chunk;
+  FastqReader reader(mates1, set->reading_chunk_size());
+  CompressedBuffers cbs(meta.header_fmt);
+
+  while (reader.readNextChunk(chunk)) {
+    for ([[maybe_unused]] const auto &r : chunk.reads) {
+    }
+    chunk.clear();
+  }
+
+#if 0
   FSE_CTable *ct = FSE_createCTable('T', 5);
   auto tableSymbol = createCTableBuildWksp('T', 5);
+#endif
 }
 
 void processArchiveParts() {

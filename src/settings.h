@@ -25,9 +25,19 @@ public:
     path mates1;
     path mates2;
     path archive;
-    int n_threads = 1;
+    unsigned n_threads = 1;
+    unsigned read_chunk_size_Mb = 1;
+    unsigned sample_chunk_size_Mb = 1;
     bool verbose = false;
   } non_storable;
 
   bool is_pe() const { return !non_storable.mates2.empty(); }
+
+  std::size_t reading_chunk_size() const {
+    return non_storable.read_chunk_size_Mb * 1024 * 1024;
+  }
+
+  std::size_t sample_chunk_size() const {
+    return non_storable.sample_chunk_size_Mb * 1024 * 1024;
+  }
 };
