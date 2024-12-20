@@ -6,6 +6,10 @@
 namespace fqzcomp28 {
 
 using path_t = std::filesystem::path;
+using readlen_t = uint16_t;
+
+constexpr std::byte BYTE0{0x00};
+constexpr std::byte BYTE1{0x01};
 
 using FastqData = std::vector<char>;
 
@@ -17,8 +21,8 @@ struct FastqRecord {
   // then fields can be made private...
   // TODO: two string_view-s of the same size is redundant
 public:
-  uint32_t length, header_length;
   const char *seqp, *qualp, *headerp;
+  readlen_t length, header_length;
 
   auto header() const { return std::string_view(headerp, header_length); }
   auto seq() const { return std::string_view(seqp, length); }
@@ -27,10 +31,15 @@ public:
 
 struct FastqChunk {
   FastqData raw_data;
-  std::vector<FastqRecord> reads;
+  std::vector<FastqRecord> records;
+  /**
+   * accamulated over all reads
+   */
+  std::size_t tot_reads_length = 0;
   void clear() {
+    tot_reads_length = 0;
     raw_data.clear();
-    reads.clear();
+    records.clear();
   }
 };
 

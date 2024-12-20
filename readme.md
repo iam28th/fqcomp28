@@ -19,4 +19,7 @@ TODO: copy/move executable to project root in CMake
 
 # Limitations 
 
+## Headers
 header in the dataset should have the same structure
+its "fields" (that is, substrings between two non-alphanumeric characters) must be no more than 255 characters long
+the last character in a header must be alphanumeric
