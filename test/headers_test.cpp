@@ -68,4 +68,8 @@ TEST_CASE("{store,load}String") {
   CHECK(out.index.contentLengthPos == out.contentLength.size());
   /* ...and corectly decoded */
   CHECK(values == decoded_values);
+
+  /* calling clear sets index to 0 */
+  out.clear();
+  CHECK(out.index.contentPos == 0);
 }

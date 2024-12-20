@@ -1,6 +1,7 @@
 #include "app.h"
 #include "compressed_buffers.h"
 #include "defs.h"
+#include "encoding_context.h"
 #include "fastq_io.h"
 #include "fse_compressor.h"
 #include "prepare.h"
@@ -47,11 +48,11 @@ void processReads() {
 
   FastqChunk chunk;
   FastqReader reader(mates1, set->reading_chunk_size());
-  CompressedBuffers cbs(meta.header_fmt);
+  CompressedBuffers cbs;
+  EncodingContext ctx(&meta);
 
   while (reader.readNextChunk(chunk)) {
-    for ([[maybe_unused]] const auto &r : chunk.reads) {
-    }
+    ctx.encodeChunk(chunk, cbs);
     chunk.clear();
   }
 

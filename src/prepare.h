@@ -10,7 +10,7 @@ namespace fqzcomp28 {
  */
 struct DatasetMeta {
   /**
-   * used for delta-ing first header in each chunk
+   * used for delta-ing the first header in each chunk
    */
   const std::string first_header;
 

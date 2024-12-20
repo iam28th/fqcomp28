@@ -50,7 +50,7 @@ bool FastqReader::readNextChunk(FastqChunk &chunk) {
 }
 
 std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
-  assert(chunk.reads.size() == 0);
+  assert(chunk.records.size() == 0);
 
   const std::size_t size = chunk.raw_data.size();
   std::size_t bytes_processed = 0;
@@ -78,15 +78,19 @@ std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
     }
 
     const auto line_length = static_cast<unsigned>(line_end - line_start);
+    // TODO: once I use delta to store readlens, will have to
+    // compare with (max >> 1u)
+    assert(line_length <= std::numeric_limits<readlen_t>::max());
 
     switch (ln) {
     case 0:
       rec.headerp = line_start;
-      rec.header_length = line_length;
+      rec.header_length = static_cast<readlen_t>(line_length);
+      chunk.tot_reads_length += line_length;
       break;
     case 1:
       rec.seqp = line_start;
-      rec.length = line_length;
+      rec.length = static_cast<readlen_t>(line_length);
       break;
     case 2: /* skip fastq quality header */
       assert(*line_start == '+');
@@ -94,7 +98,7 @@ std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
     case 3:
       assert(line_length == rec.length);
       rec.qualp = line_start;
-      chunk.reads.push_back(rec);
+      chunk.records.push_back(rec);
       ln = -1; /* so that it's 0 after increment... */
       break;
     default:

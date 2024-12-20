@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <charconv>
 #include <cstring>
-#include <limits>
 #include <stdexcept>
 
 namespace fqzcomp28 {
@@ -46,9 +45,9 @@ void FieldStorageIn::storeString(string_t::iterator field_start,
     isDifferentFlag.push_back(BYTE0);
   } else {
     isDifferentFlag.push_back(BYTE1);
+    assert(val.length() < FIELDLEN_MAX);
     content.insert(content.end(), to_byte_ptr(val.begin()),
                    to_byte_ptr(val.end()));
-    assert(val.length() < std::numeric_limits<unsigned char>::max());
     contentLength.push_back(static_cast<std::byte>(val.length()));
     prev_val = val;
   }
@@ -71,43 +70,30 @@ unsigned FieldStorageOut::loadNextString(char *dst, string_t &prev_val) {
   return field_length;
 }
 
-#if 0
-void storeNumeric(string_t::iterator field_start, string_t::iterator field_end,
-                  numeric_t &prev_val, FieldStorage &storage) {
+void FieldStorageIn::storeNumeric(string_t::iterator field_start,
+                                  string_t::iterator field_end,
+                                  numeric_t &prev_val) {
   numeric_t val;
   [[maybe_unused]] auto [_, ec] = std::from_chars(field_start, field_end, val);
   assert(ec == std::errc()); /* no error */
-
-  /* last bit is 0 if value if larger than the previous */
-  // TODO: convertion to/from delta functions
-  numeric_t delta = std::abs(val - prev_val);
-  assert(delta < (std::numeric_limits<udelta_t>::max() >> 1u));
-  udelta_t udelta = (static_cast<udelta_t>(delta) << 1u) + (val < prev_val);
-
-  storeAsBytes(udelta, storage.content);
-
+  udelta_t delta = static_cast<udelta_t>(storeDeltaInUnsigned(prev_val, val));
+  storeAsBytes(delta, content);
   prev_val = val;
 }
 
-std::size_t loadNumeric(char *to, numeric_t &prev_val, FieldStorage &storage,
-                        FieldStorageIndex &index) {
-  assert(index.contentPos < storage.content.size());
+unsigned FieldStorageOut::loadNextNumeric(char *dst, numeric_t &prev_val) {
 
   udelta_t udelta;
-  std::memcpy(reinterpret_cast<unsigned char *>(&udelta),
-              storage.content.data() + index.contentPos, sizeof(udelta));
+  std::memcpy(reinterpret_cast<std::byte *>(&udelta),
+              content.data() + index.contentPos, sizeof(udelta_t));
   index.contentPos += sizeof(udelta);
 
-  numeric_t delta = (udelta & 1u) ? -static_cast<numeric_t>(udelta >> 1u)
-                                  : static_cast<numeric_t>(udelta >> 1u);
-  numeric_t val = prev_val + delta;
-
+  numeric_t val = readDeltaFromUnsigned(prev_val, udelta);
   prev_val = val;
 
-  auto res = std::to_chars(to, to + FIELDLEN_MAX, val);
+  auto res = std::to_chars(dst, dst + FIELDLEN_MAX, val);
   assert(res.ec == std::errc());
-  return static_cast<std::size_t>(res.ptr - to);
+  return static_cast<unsigned>(res.ptr - dst);
 }
-#endif
 } // namespace headers
 } // namespace fqzcomp28

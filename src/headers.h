@@ -1,7 +1,9 @@
 #pragma once
 #include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <string_view>
 #include <variant>
 #include <vector>
@@ -17,7 +19,7 @@ namespace headers {
 enum class FieldType { NUMERIC = 0, STRING };
 
 /* string_t is a view into either the first or the previous header */
-using numeric_t = long long;
+using numeric_t = int32_t;
 using string_t = std::string_view;
 using field_data_t = std::variant<numeric_t, string_t>;
 
@@ -71,45 +73,39 @@ struct FieldStorage {
 struct FieldStorageIn : public FieldStorage {
   void storeString(string_t::iterator field_start, string_t::iterator field_end,
                    string_t &prev_val);
-#if 0
   void storeNumeric(string_t::iterator field_start,
                     string_t::iterator field_end, numeric_t &prev_val);
-#endif
 };
 
 struct FieldStorageOut : public FieldStorage {
   struct {
+    // TODO: track as std::byte* instead
     std::size_t isDifferentPos = 0, contentPos = 0, contentLengthPos = 0;
   } index;
+  /**
+   * @return number of bytes written to `dst`
+   */
+  unsigned loadNextString(char *dst, string_t &prev_fal);
+  unsigned loadNextNumeric(char *dst, numeric_t &prev_val);
 
   void clear() override {
     FieldStorage::clear();
     index = {};
   }
-
-  unsigned loadNextString(char *dst, string_t &prev_fal);
-#if 0
-  unsigned loadNumeric(char *dst, numeric_t &prev_val);
-#endif
 };
 
-#if 0
-/**
- * used for reading - holds current position in FieldStorage buffers
- */
-struct FieldStorageIndex {};
+inline udelta_t storeDeltaInUnsigned(numeric_t prev, numeric_t nxt) {
+  numeric_t delta = std::abs(nxt - prev);
+  assert(static_cast<udelta_t>(delta) <=
+         (std::numeric_limits<udelta_t>::max() >> 1u));
+  return (static_cast<udelta_t>(delta) << 1u) + (nxt < prev);
+}
 
-/**
- * @return number of bytes written to `to`
- */
-std::size_t loadString(char *to, string_t &prev_val, FieldStorage &,
-                       FieldStorageIndex &);
+inline numeric_t readDeltaFromUnsigned(numeric_t prev, udelta_t udelta) {
+  numeric_t delta = (udelta & 1u) ? -static_cast<numeric_t>(udelta >> 1u)
+                                  : static_cast<numeric_t>(udelta >> 1u);
+  return prev + delta;
+}
 
-/**
- * @return number of bytes written to `to`
- */
-std::size_t loadString(char *to, string_t &prev_val, FieldStorage &,
-                       FieldStorageIndex &);
-#endif
 } // namespace headers
 } // namespace fqzcomp28

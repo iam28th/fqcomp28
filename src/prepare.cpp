@@ -4,7 +4,7 @@
 namespace fqzcomp28 {
 
 DatasetMeta::DatasetMeta(const FastqChunk &chunk)
-    : first_header(chunk.reads.front().header()), header_fmt(first_header) {}
+    : first_header(chunk.records.front().header()), header_fmt(first_header) {}
 
 DatasetMeta analyzeDataset(path_t fastq_file, std::size_t sample_size_bytes) {
   FastqChunk chunk;
