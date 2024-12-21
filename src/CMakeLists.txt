@@ -2,26 +2,14 @@ include(${CMAKE_SOURCE_DIR}/cmake/Dependencies.cmake)
 
 add_library(fqzcomp28Core OBJECT
     app.cpp
-    app.h
     archive.cpp
-    archive.h
     compressed_buffers.cpp
-    compressed_buffers.h
-    defs.h
     encoding_context.cpp
-    encoding_context.h
     fastq_io.cpp
-    fastq_io.h
-    fse_compressor.h
     headers.cpp
-    headers.h
     prepare.cpp
-    prepare.h
     process.cpp
-    process.h
-    settings.h
-    utils.cpp
-    utils.h
+    report.cpp
 )
 
 target_include_directories(fqzcomp28Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

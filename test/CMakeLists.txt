@@ -7,10 +7,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 
 
-add_executable(unit_tests 
-    sequtils_test.cpp
+add_executable(unit_tests
+    test_utils.cpp
     fastq_io_test.cpp
     headers_test.cpp
+    encoding_context_test.cpp
 )
 
 target_link_libraries(unit_tests PRIVATE

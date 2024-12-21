@@ -41,39 +41,23 @@ public:
    * // TODO: store stuff required for allocation in CompressedBuffers
    * // to make API symmetric
    */
-  void decodeChunk(FastqChunk &chunk, const CompressedBuffers &cbs);
+  void decodeChunk(FastqChunk &chunk, CompressedBuffers &cbs);
+
+  friend struct EncodingContextTester;
 
 private:
-  void encodeHeader(std::string_view header, CompressedBuffers &cbs);
+  void encodeHeader(const std::string_view header, CompressedBuffers &cbs);
+
   /**
    * @return number of bytes written
    */
-  readlen_t decodeHeader(char *dst, const CompressedBuffers &cbs,
-                         std::size_t idx);
+  unsigned decodeHeader(char *dst, CompressedBuffers &cbs);
 
-  void storeHeaderField(std::string_view::iterator field_start,
-                        std::string_view::iterator field_end,
-                        headers::FieldStorage &storage, std::size_t field_idx);
-
-  readlen_t loadHeaderField(char *dst, const headers::FieldStorage &storage,
-                            std::size_t field_idx);
-
-  /**
-   * @brief
-   */
-  void convertHeaderFieldFromAscii(std::string_view::iterator field_start,
-                                   std::string_view::iterator field_end,
-                                   headers::field_data_t &dst,
-                                   headers::FieldType typ);
   /**
    * must be called to reset context before encoding or
    * decoding a new chunk
    */
   void startNewChunk();
-
-  static void
-  initalizeHeaderFields(header_fields_t &fields,
-                        const headers::HeaderFormatSpeciciation &fmt);
 
   const DatasetMeta *const meta_;
 
@@ -83,5 +67,18 @@ private:
    */
   header_fields_t first_header_fields_;
   header_fields_t prev_header_fields_;
+
+  static void
+  initalizeHeaderFields(header_fields_t &fields,
+                        const headers::HeaderFormatSpeciciation &fmt);
+
+  /**
+   * @brief
+   */
+  static void
+  convertHeaderFieldFromAscii(std::string_view::iterator field_start,
+                              std::string_view::iterator field_end,
+                              headers::field_data_t &dst,
+                              headers::FieldType typ);
 };
 } // namespace fqzcomp28

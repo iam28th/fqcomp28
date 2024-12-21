@@ -43,6 +43,10 @@ struct HeaderFormatSpeciciation {
  * holds a certain field of multiple headers
  */
 struct FieldStorage {
+protected:
+  FieldStorage() = default;
+
+public:
   /**
    * for STRING - if the field' value is the same as
    * in the previous header, store 0 in `isDifferent`
@@ -51,11 +55,13 @@ struct FieldStorage {
    *
    * for NUMERIC - store delta with the previous
    * header as sizeof(numeric_t) bytes in `content`
-   * // TODO: try encoding sign and magnitude of delta separately
+   * TODO: try encoding sign and magnitude of delta separately
    * */
   std::vector<std::byte> isDifferentFlag;
   std::vector<std::byte> content;
   std::vector<std::byte> contentLength;
+
+  virtual ~FieldStorage() = default;
 
   virtual void clear() {
     isDifferentFlag.clear();

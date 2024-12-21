@@ -1,16 +1,10 @@
 #include "headers.h"
+#include "test_utils.h"
 #include <catch2/catch_test_macros.hpp>
 #include <random>
 
+using namespace fqzcomp28;
 using namespace fqzcomp28::headers;
-
-FieldStorageOut convertToOutStorage(FieldStorageIn &&in) {
-  FieldStorageOut out;
-  out.isDifferentFlag = std::move(in.isDifferentFlag);
-  out.content = std::move(in.content);
-  out.contentLength = std::move(in.contentLength);
-  return out;
-}
 
 /**
  * split a header into fields and deduce their types

@@ -1,4 +1,6 @@
-#include "utils.h"
+#include "test_utils.h"
+#include "defs.h"
+#include "fastq_io.h"
 #include <fstream>
 
 namespace fqzcomp28 {
@@ -16,4 +18,11 @@ std::vector<char> loadFileContents(path_t const path) {
   return buf;
 }
 
-}; // namespace fqzcomp28
+FastqChunk loadFastqFileContents(const fqzcomp28::path_t path) {
+  FastqChunk chunk;
+  chunk.raw_data = loadFileContents(path);
+  FastqReader::parseRecords(chunk);
+  return chunk;
+}
+
+} // namespace fqzcomp28

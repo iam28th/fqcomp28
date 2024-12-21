@@ -5,13 +5,11 @@
 
 namespace fqzcomp28 {
 
+// TODO: separate classes for compression and decompression
 struct CompressedBuffers {
-
-#if 0
-  std::vector<unsigned char> seq, qual;
-#endif
   std::vector<std::byte> seq, qual;
-  std::vector<headers::FieldStorage> header_fields;
+  std::vector<headers::FieldStorageIn> header_fields_in;
+  std::vector<headers::FieldStorageOut> header_fields_out;
 
   // TODO: now it's stored as plain values;
   // change to delta
@@ -27,7 +25,7 @@ struct CompressedBuffers {
   void clear() {
     seq.clear();
     qual.clear();
-    for (auto &hf : header_fields)
+    for (auto &hf : header_fields_in)
       hf.clear();
   }
 

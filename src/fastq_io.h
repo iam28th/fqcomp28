@@ -14,13 +14,13 @@ public:
    */
   bool readNextChunk(FastqChunk &chunk);
 
-private:
   /**
    * sets pointers in chunk.reads;
    * @return position at which a partially loaded read starts
    */
   static std::size_t parseRecords(FastqChunk &chunk);
 
+private:
   /**
    * chunk size in bytes (approximate, in case of partial read)
    */

@@ -1,5 +1,5 @@
 #include "fastq_io.h"
-#include "utils.h"
+#include "test_utils.h"
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
 #include <ranges>

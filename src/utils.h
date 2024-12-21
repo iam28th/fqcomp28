@@ -1,11 +1,8 @@
 #pragma once
-#include "defs.h"
-#
+#include <string_view>
+#include <vector>
 
 namespace fqzcomp28 {
-
-void loadFileContents(path_t const path, std::vector<char> &data);
-std::vector<char> loadFileContents(path_t const path);
 
 template <typename T>
 void storeAsBytes(T val, std::vector<std::byte> &storage) {

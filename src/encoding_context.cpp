@@ -7,8 +7,8 @@
 namespace fqzcomp28 {
 
 EncodingContext::EncodingContext(const DatasetMeta *meta) : meta_(meta) {
-  auto &fmt = meta->header_fmt;
-  std::string_view first_header(meta->first_header);
+  const auto &fmt = meta->header_fmt;
+  const std::string_view first_header(meta->first_header);
 
   initalizeHeaderFields(first_header_fields_, fmt);
   initalizeHeaderFields(prev_header_fields_, fmt);
@@ -16,17 +16,13 @@ EncodingContext::EncodingContext(const DatasetMeta *meta) : meta_(meta) {
   auto field_start = first_header.begin() + 1; /* skip '@' */
   for (std::size_t field_idx = 0, E = fmt.n_fields() - 1; field_idx < E;
        ++field_idx) {
-
     const auto field_end = std::find(field_start + 1, first_header.end(),
                                      fmt.separators[field_idx]);
-
     convertHeaderFieldFromAscii(field_start, field_end,
                                 first_header_fields_[field_idx],
                                 fmt.field_types[field_idx]);
-
     field_start = field_end + 1; /* skip separator */
   }
-
   convertHeaderFieldFromAscii(field_start, first_header.end(),
                               first_header_fields_.back(),
                               fmt.field_types.back());
@@ -34,6 +30,7 @@ EncodingContext::EncodingContext(const DatasetMeta *meta) : meta_(meta) {
 
 void EncodingContext::encodeChunk(const FastqChunk &chunk,
                                   CompressedBuffers &cbs) {
+#if 0 
   cbs.clear();
 #if 0
   cbs.seq.resize(compressBoundSequence(chunk.tot_reads_length));
@@ -56,11 +53,12 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
                      reinterpret_cast<const std::byte *>(p + r.length));
     }
   }
+#endif
 }
 
-void EncodingContext::decodeChunk(FastqChunk &chunk,
-                                  const CompressedBuffers &cbs) {
+void EncodingContext::decodeChunk(FastqChunk &chunk, CompressedBuffers &cbs) {
   startNewChunk();
+#if 0
   chunk.records.resize(cbs.n_records());
 
   // TODO: use unsigned char everywhere
@@ -85,6 +83,7 @@ void EncodingContext::decodeChunk(FastqChunk &chunk,
     src_seq += r.length;
     src_qual += r.length;
   }
+#endif
 }
 
 void EncodingContext::startNewChunk() {
@@ -92,79 +91,69 @@ void EncodingContext::startNewChunk() {
                              first_header_fields_.end());
 }
 
-void EncodingContext::encodeHeader(std::string_view header,
+void EncodingContext::encodeHeader(const std::string_view header,
                                    CompressedBuffers &cbs) {
-  auto &fmt = meta_->header_fmt;
+  const auto &fmt = meta_->header_fmt;
   auto field_start = header.begin() + 1; /* skip '@' */
-  for (std::size_t field_idx = 0, E = fmt.n_fields() - 1; field_idx < E;
-       ++field_idx) {
-
+  for (std::size_t i = 0, E = fmt.n_fields() - 1; i < E; ++i) {
     const auto field_end =
-        std::find(field_start + 1, header.end(), fmt.separators[field_idx]);
+        std::find(field_start + 1, header.end(), fmt.separators[i]);
 
-    storeHeaderField(field_start, field_end, cbs.header_fields[field_idx],
-                     field_idx);
+    auto &storage = cbs.header_fields_in[i];
+    auto &prev_value = prev_header_fields_[i];
+    if (fmt.field_types[i] == headers::FieldType::STRING) {
+      storage.storeString(field_start, field_end,
+                          std::get<headers::string_t>(prev_value));
+    } else {
+      storage.storeNumeric(field_start, field_end,
+                           std::get<headers::numeric_t>(prev_value));
+    }
 
     field_start = field_end + 1; /* skip separator */
   }
 
-  storeHeaderField(field_start, header.end(), cbs.header_fields.back(),
-                   fmt.n_fields() - 1);
+  // TODO: check how processing all fields inside the loop affects performance
+  auto &storage = cbs.header_fields_in.back();
+  auto &prev_value = prev_header_fields_.back();
+  if (fmt.field_types.back() == headers::FieldType::STRING) {
+    storage.storeString(field_start, header.end(),
+                        std::get<headers::string_t>(prev_value));
+  } else {
+    storage.storeNumeric(field_start, header.end(),
+                         std::get<headers::numeric_t>(prev_value));
+  }
 }
 
-readlen_t EncodingContext::decodeHeader(char *dst, const CompressedBuffers &cbs,
-                                        std::size_t read_idx) {
+unsigned EncodingContext::decodeHeader(char *dst, CompressedBuffers &cbs) {
   auto &fmt = meta_->header_fmt;
   char *const old_dst = dst;
   *dst++ = '@';
 
-  for (std::size_t field_idx = 0, E = fmt.n_fields() - 1; field_idx < E;
-       ++field_idx) {
+  for (std::size_t i = 0, E = fmt.n_fields() - 1; i < E; ++i) {
 
-    dst += loadHeaderField(dst, cbs.header_fields[field_idx], field_idx);
+    auto &storage = cbs.header_fields_out[i];
+    auto &prev_value = prev_header_fields_[i];
+    if (fmt.field_types[i] == headers::FieldType::STRING) {
+      dst +=
+          storage.loadNextString(dst, std::get<headers::string_t>(prev_value));
+    } else {
+      dst += storage.loadNextNumeric(dst,
+                                     std::get<headers::numeric_t>(prev_value));
+    }
+
+    *dst++ += fmt.separators[i];
   }
 
-  // TODO: test for store/load header field
-  dst += loadHeaderField(dst, cbs.header_fields.back(), fmt.n_fields() - 1);
-
-  return static_cast<readlen_t>(dst - old_dst);
-}
-
-void EncodingContext::storeHeaderField(std::string_view::iterator field_start,
-                                       std::string_view::iterator field_end,
-                                       headers::FieldStorage &storage,
-                                       std::size_t field_idx) {
-#if 0
-  const auto &fmt = meta_->header_fmt;
-
-  if (fmt.field_types[field_idx] == headers::FieldType::STRING) {
-    headers::storeString(
-        field_start, field_end,
-        std::get<headers::string_t>(prev_header_fields_[field_idx]), storage);
+  auto &storage = cbs.header_fields_out.back();
+  auto &prev_value = prev_header_fields_.back();
+  if (fmt.field_types.back() == headers::FieldType::STRING) {
+    dst += storage.loadNextString(dst, std::get<headers::string_t>(prev_value));
   } else {
-    headers::storeNumeric(
-        field_start, field_end,
-        std::get<headers::numeric_t>(prev_header_fields_[field_idx]), storage);
+    dst +=
+        storage.loadNextNumeric(dst, std::get<headers::numeric_t>(prev_value));
   }
-#endif
-}
 
-readlen_t EncodingContext::loadHeaderField(char *dst,
-                                           const headers::FieldStorage &storage,
-                                           std::size_t field_idx) {}
-
-void EncodingContext::convertHeaderFieldFromAscii(
-    std::string_view::iterator field_start,
-    std::string_view::iterator field_end, headers::field_data_t &to,
-    headers::FieldType typ) {
-  if (typ == headers::FieldType::STRING)
-    std::get<headers::string_t>(to) = {field_start, field_end};
-  else {
-    headers::numeric_t &val = std::get<headers::numeric_t>(to);
-    [[maybe_unused]] auto [_, ec] =
-        std::from_chars(field_start, field_end, val);
-    assert(ec == std::errc()); /* no error */
-  }
+  return static_cast<unsigned>(dst - old_dst);
 }
 
 /**
@@ -178,6 +167,20 @@ void EncodingContext::initalizeHeaderFields(
       fields[i] = headers::string_t{};
     else
       fields[i] = headers::numeric_t{};
+  }
+}
+
+void EncodingContext::convertHeaderFieldFromAscii(
+    std::string_view::iterator field_start,
+    std::string_view::iterator field_end, headers::field_data_t &to,
+    headers::FieldType typ) {
+  if (typ == headers::FieldType::STRING)
+    std::get<headers::string_t>(to) = {field_start, field_end};
+  else {
+    headers::numeric_t &val = std::get<headers::numeric_t>(to);
+    [[maybe_unused]] auto [_, ec] =
+        std::from_chars(field_start, field_end, val);
+    assert(ec == std::errc()); /* no error */
   }
 }
 
