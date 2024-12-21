@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <limits>
 #include <string_view>
 #include <variant>
 #include <vector>
@@ -24,12 +23,6 @@ using string_t = std::string_view;
 using field_data_t = std::variant<numeric_t, string_t>;
 
 constexpr std::size_t FIELDLEN_MAX = 255;
-
-/**
- * a type used to store delta between numeric field values
- * of adjacent headers
- */
-using udelta_t = uint32_t;
 
 /**
  * describes the structure of a header
@@ -57,7 +50,8 @@ struct FieldStorage {
    * and value's length (as 1 byte) in `contentLength`
    *
    * for NUMERIC - store delta with the previous
-   * header as 2 bytes in `content`
+   * header as sizeof(numeric_t) bytes in `content`
+   * // TODO: try encoding sign and magnitude of delta separately
    * */
   std::vector<std::byte> isDifferentFlag;
   std::vector<std::byte> content;
@@ -93,19 +87,6 @@ struct FieldStorageOut : public FieldStorage {
     index = {};
   }
 };
-
-inline udelta_t storeDeltaInUnsigned(numeric_t prev, numeric_t nxt) {
-  numeric_t delta = std::abs(nxt - prev);
-  assert(static_cast<udelta_t>(delta) <=
-         (std::numeric_limits<udelta_t>::max() >> 1u));
-  return (static_cast<udelta_t>(delta) << 1u) + (nxt < prev);
-}
-
-inline numeric_t readDeltaFromUnsigned(numeric_t prev, udelta_t udelta) {
-  numeric_t delta = (udelta & 1u) ? -static_cast<numeric_t>(udelta >> 1u)
-                                  : static_cast<numeric_t>(udelta >> 1u);
-  return prev + delta;
-}
 
 } // namespace headers
 } // namespace fqzcomp28

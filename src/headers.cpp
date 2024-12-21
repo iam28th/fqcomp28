@@ -76,22 +76,23 @@ void FieldStorageIn::storeNumeric(string_t::iterator field_start,
   numeric_t val;
   [[maybe_unused]] auto [_, ec] = std::from_chars(field_start, field_end, val);
   assert(ec == std::errc()); /* no error */
-  udelta_t delta = static_cast<udelta_t>(storeDeltaInUnsigned(prev_val, val));
+
+  const numeric_t delta = val - prev_val;
   storeAsBytes(delta, content);
   prev_val = val;
 }
 
 unsigned FieldStorageOut::loadNextNumeric(char *dst, numeric_t &prev_val) {
 
-  udelta_t udelta;
-  std::memcpy(reinterpret_cast<std::byte *>(&udelta),
-              content.data() + index.contentPos, sizeof(udelta_t));
-  index.contentPos += sizeof(udelta);
+  numeric_t delta;
+  std::memcpy(reinterpret_cast<std::byte *>(&delta),
+              content.data() + index.contentPos, sizeof(delta));
+  index.contentPos += sizeof(delta);
 
-  numeric_t val = readDeltaFromUnsigned(prev_val, udelta);
+  const numeric_t val = prev_val + delta;
   prev_val = val;
 
-  auto res = std::to_chars(dst, dst + FIELDLEN_MAX, val);
+  const auto res = std::to_chars(dst, dst + FIELDLEN_MAX, val);
   assert(res.ec == std::errc());
   return static_cast<unsigned>(res.ptr - dst);
 }
