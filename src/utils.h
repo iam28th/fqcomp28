@@ -4,23 +4,36 @@
 
 namespace fqzcomp28 {
 
+/**
+ * @brief appends bytes from val to storage
+ */
 template <typename T>
-void storeAsBytes(T val, std::vector<std::byte> &storage) {
-  std::byte *p = reinterpret_cast<std::byte *>(&val);
+void storeAsBytes(const T val, std::vector<std::byte> &storage)
+  requires std::is_trivially_copyable_v<T>
+{
+  const std::byte *p = reinterpret_cast<const std::byte *>(&val);
   storage.insert(storage.end(), p, p + sizeof(val));
 }
 
-inline auto *to_byte_ptr(std::string_view::iterator it) {
+template <std::random_access_iterator T> auto to_byte_ptr(T it) {
+  return reinterpret_cast<std::byte *>(it);
+}
+
+template <std::random_access_iterator T>
+auto to_byte_ptr(T it)
+  requires std::is_same_v<T, std::string_view::iterator> ||
+           std::is_same_v<T, const char *>
+{
   return reinterpret_cast<const std::byte *>(it);
 }
 
+#if 0
 template <typename T>
 concept signed_integral = std::integral<T> && std::is_signed_v<T>;
 
 template <typename T>
 concept unsigned_integral = std::integral<T> && std::is_unsigned_v<T>;
 
-#if 0
 /* last bit is 0 if value if larger than the previous */
 // TODO: not sure if this is a good encoding strategy,
 // maybe better to just store delta in signed T as is ...

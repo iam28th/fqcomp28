@@ -1,5 +1,6 @@
 #include "encoding_context.h"
 #include "headers.h"
+#include "utils.h"
 #include <algorithm>
 #include <charconv>
 #include <cstring>
@@ -30,12 +31,9 @@ EncodingContext::EncodingContext(const DatasetMeta *meta) : meta_(meta) {
 
 void EncodingContext::encodeChunk(const FastqChunk &chunk,
                                   CompressedBuffers &cbs) {
-#if 0 
   cbs.clear();
-#if 0
   cbs.seq.resize(compressBoundSequence(chunk.tot_reads_length));
   cbs.qual.resize(compressBoundQuality(chunk.tot_reads_length));
-#endif
 
   startNewChunk();
 
@@ -47,13 +45,11 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
     // I want to check the general workflow first,
     // so for now - just copy sequence and qualities
     cbs.readlens.push_back(r.length);
-
-    for (auto p : {r.seqp, r.qualp}) {
-      cbs.seq.insert(cbs.seq.end(), reinterpret_cast<const std::byte *>(p),
-                     reinterpret_cast<const std::byte *>(p + r.length));
-    }
+    cbs.seq.insert(cbs.seq.end(), to_byte_ptr(r.seqp),
+                   to_byte_ptr(r.seqp + r.length));
+    cbs.qual.insert(cbs.qual.end(), to_byte_ptr(r.qualp),
+                    to_byte_ptr(r.qualp + r.length));
   }
-#endif
 }
 
 void EncodingContext::decodeChunk(FastqChunk &chunk, CompressedBuffers &cbs) {
