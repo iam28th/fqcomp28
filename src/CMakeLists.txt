@@ -44,5 +44,5 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     )
 endif()
 
-add_executable(fqzcomp28 bootstrap.cpp)
+add_executable(fqzcomp28 entry_point.cpp)
 target_link_libraries(fqzcomp28 PRIVATE fqzcomp28Core)

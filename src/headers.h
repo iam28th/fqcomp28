@@ -70,14 +70,14 @@ public:
   }
 };
 
-struct FieldStorageIn : public FieldStorage {
+struct FieldStorageDst : public FieldStorage {
   void storeString(string_t::iterator field_start, string_t::iterator field_end,
                    string_t &prev_val);
   void storeNumeric(string_t::iterator field_start,
                     string_t::iterator field_end, numeric_t &prev_val);
 };
 
-struct FieldStorageOut : public FieldStorage {
+struct FieldStorageSrc : public FieldStorage {
   struct {
     // TODO: track as std::byte* instead
     std::size_t isDifferentPos = 0, contentPos = 0, contentLengthPos = 0;

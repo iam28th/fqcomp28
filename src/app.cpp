@@ -3,12 +3,12 @@
 #include "settings.h"
 
 namespace {
-
 void addCommonOptions(CLI::App *subcommand);
 CLI::App *createCompressSubcommand(CLI::App *app);
 CLI::App *createDecompressSubcommand(CLI::App *app);
-
 } // namespace
+
+namespace fqzcomp28 {
 
 void addOptions(CLI::App *app) {
   app->require_subcommand(1, 1);
@@ -18,13 +18,14 @@ void addOptions(CLI::App *app) {
   auto c = createCompressSubcommand(app);
   auto d = createDecompressSubcommand(app);
 
-  c->parse_complete_callback(fqzcomp28::processReads);
+  c->parse_complete_callback(processReads);
   d->parse_complete_callback(fqzcomp28::processArchiveParts);
 }
+} // namespace fqzcomp28
 
 namespace {
 void addCommonOptions(CLI::App *subcommand) {
-  auto set = Settings::getInstance();
+  auto set = fqzcomp28::Settings::getInstance();
   subcommand->add_option("-t,--threads", set->non_storable.n_threads,
                          "number of processing threads");
   subcommand->add_flag("--verbose", set->non_storable.verbose,
@@ -32,7 +33,7 @@ void addCommonOptions(CLI::App *subcommand) {
 }
 
 CLI::App *createCompressSubcommand(CLI::App *app) {
-  auto set = Settings::getInstance();
+  auto set = fqzcomp28::Settings::getInstance();
   auto cmd = app->add_subcommand("c", "run compression");
 
   cmd->add_option("--i1,--input1", set->non_storable.mates1,
@@ -43,16 +44,14 @@ CLI::App *createCompressSubcommand(CLI::App *app) {
                   "path to a fastq file with second mates")
       ->check(CLI::ExistingFile);
 
-  cmd->add_option("-o,--output", set->non_storable.archive)
-      ->check(CLI::NonexistentPath)
-      ->required();
+  cmd->add_option("-o,--output", set->non_storable.archive)->required();
 
   addCommonOptions(cmd);
   return cmd;
 }
 
 CLI::App *createDecompressSubcommand(CLI::App *app) {
-  auto set = Settings::getInstance();
+  auto set = fqzcomp28::Settings::getInstance();
   auto cmd = app->add_subcommand("d", "run decompression");
 
   cmd->add_option("-i,--input", set->non_storable.archive,
@@ -74,5 +73,4 @@ CLI::App *createDecompressSubcommand(CLI::App *app) {
   addCommonOptions(cmd);
   return cmd;
 }
-
 } // namespace

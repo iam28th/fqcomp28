@@ -30,17 +30,17 @@ class EncodingContext {
   /** reserves enough space in `cbs` to encode `chunk`
    * & write stuff required for decompression */
   void prepareCompressedBuffers(const FastqChunk &chunk,
-                                CompressedBuffers &cbs) {
+                                CompressedBuffersDst &cbs) {
     cbs.clear();
     cbs.original_size = chunk.raw_data.size();
     cbs.seq.resize(compressBoundSequence(chunk.tot_reads_length));
     cbs.qual.resize(compressBoundQuality(chunk.tot_reads_length));
-    cbs.header_fields_in.resize(meta_->header_fmt.n_fields());
+    cbs.header_fields.resize(meta_->header_fmt.n_fields());
   }
 
   /** reserves enough space in `chunk` to decode `cbs` */
   static void prepareFastqChunk(FastqChunk &chunk,
-                                const CompressedBuffers &cbs) {
+                                const CompressedBuffersSrc &cbs) {
     chunk.clear();
     chunk.raw_data.resize(cbs.original_size);
     chunk.records.resize(cbs.n_records());
@@ -50,20 +50,20 @@ public:
   EncodingContext(const DatasetMeta *meta);
 
   /** encodes reads into cbs, allocating memory in cbs as needed */
-  void encodeChunk(const FastqChunk &, CompressedBuffers &cbs);
+  void encodeChunk(const FastqChunk &, CompressedBuffersDst &cbs);
 
   /** decodes reads from cbs into chunk; resizes chunk as needed */
-  void decodeChunk(FastqChunk &chunk, CompressedBuffers &cbs);
+  void decodeChunk(FastqChunk &chunk, CompressedBuffersSrc &cbs);
 
   friend struct EncodingContextTester;
 
 private:
-  void encodeHeader(const std::string_view header, CompressedBuffers &cbs);
+  void encodeHeader(const std::string_view header, CompressedBuffersDst &cbs);
 
   /** @return number of bytes written to dst */
-  unsigned decodeHeader(char *dst, CompressedBuffers &cbs);
+  unsigned decodeHeader(char *dst, CompressedBuffersSrc &cbs);
 
-  void updateStats(const CompressedBuffers &cbs);
+  void updateStats(const CompressedBuffersDst &cbs);
 
   /**
    * must be called to reset context before encoding or

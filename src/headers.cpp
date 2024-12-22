@@ -38,9 +38,9 @@ HeaderFormatSpeciciation::HeaderFormatSpeciciation(
   }
 }
 
-void FieldStorageIn::storeString(string_t::iterator field_start,
-                                 string_t::iterator field_end,
-                                 string_t &prev_val) {
+void FieldStorageDst::storeString(string_t::iterator field_start,
+                                  string_t::iterator field_end,
+                                  string_t &prev_val) {
   const string_t val(field_start, field_end);
   if (val == prev_val) {
     isDifferentFlag.push_back(BYTE0);
@@ -54,7 +54,7 @@ void FieldStorageIn::storeString(string_t::iterator field_start,
   }
 }
 
-unsigned FieldStorageOut::loadNextString(char *dst, string_t &prev_val) {
+unsigned FieldStorageSrc::loadNextString(char *dst, string_t &prev_val) {
   const auto is_different = isDifferentFlag[index.isDifferentPos++];
   if (is_different == BYTE0) {
     std::memcpy(dst, prev_val.begin(), prev_val.length());
@@ -71,9 +71,9 @@ unsigned FieldStorageOut::loadNextString(char *dst, string_t &prev_val) {
   return field_length;
 }
 
-void FieldStorageIn::storeNumeric(string_t::iterator field_start,
-                                  string_t::iterator field_end,
-                                  numeric_t &prev_val) {
+void FieldStorageDst::storeNumeric(string_t::iterator field_start,
+                                   string_t::iterator field_end,
+                                   numeric_t &prev_val) {
   numeric_t val;
   [[maybe_unused]] auto [_, ec] = std::from_chars(field_start, field_end, val);
   assert(ec == std::errc()); /* no error */
@@ -83,7 +83,7 @@ void FieldStorageIn::storeNumeric(string_t::iterator field_start,
   prev_val = val;
 }
 
-unsigned FieldStorageOut::loadNextNumeric(char *dst, numeric_t &prev_val) {
+unsigned FieldStorageSrc::loadNextNumeric(char *dst, numeric_t &prev_val) {
 
   numeric_t delta;
   std::memcpy(reinterpret_cast<std::byte *>(&delta),

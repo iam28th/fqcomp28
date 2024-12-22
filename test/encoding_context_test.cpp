@@ -16,8 +16,8 @@ struct EncodingContextTester {
     EncodingContext ctx(&meta);
     ctx.startNewChunk();
 
-    CompressedBuffers cbs;
-    ctx.prepareCompressedBuffers(chunk, cbs);
+    CompressedBuffersDst cbs_dst;
+    ctx.prepareCompressedBuffers(chunk, cbs_dst);
 
     /* concatenated original headers */
     std::vector<char> original_headers;
@@ -25,36 +25,37 @@ struct EncodingContextTester {
     for (const auto &r : chunk.records) {
       original_headers.insert(original_headers.end(), r.header().begin(),
                               r.header().end());
-      ctx.encodeHeader(r.header(), cbs);
+      ctx.encodeHeader(r.header(), cbs_dst);
     }
 
-    prepareCbsForDecoding(cbs);
+    CompressedBuffersSrc cbs_src = convertToSrcBuffers(std::move(cbs_dst));
     ctx.startNewChunk();
 
     std::vector<char> decoded_headers(original_headers.size(), 0);
     char *dst = decoded_headers.data();
     for (std::size_t i = 0; i < chunk.records.size(); ++i)
-      dst += ctx.decodeHeader(dst, cbs);
+      dst += ctx.decodeHeader(dst, cbs_src);
 
     CHECK(static_cast<std::size_t>(dst - decoded_headers.data()) ==
           original_headers.size());
     CHECK(original_headers == decoded_headers);
   }
 
-  // TODO probably can
   static void encodeChunk() {
+    // TODO probably can repeat this code only once somehow
     const path_t input = "test/data/SRR065390_1_first5.fastq";
     const FastqChunk chunk_in = loadFastqFileContents(input);
     const DatasetMeta meta(chunk_in);
 
     EncodingContext ctx(&meta);
-    CompressedBuffers cbs;
+    CompressedBuffersDst cbs;
 
     ctx.encodeChunk(chunk_in, cbs);
 
     FastqChunk chunk_out;
-    prepareCbsForDecoding(cbs);
-    ctx.decodeChunk(chunk_out, cbs);
+
+    CompressedBuffersSrc src = convertToSrcBuffers(std::move(cbs));
+    ctx.decodeChunk(chunk_out, src);
 
     // CHECK(chunk_out.raw_data == chunk_in.raw_data);
     CHECK(chunk_out.records.size() == chunk_in.records.size());
@@ -64,13 +65,6 @@ struct EncodingContextTester {
       CHECK(rec_in.seq() == rec_out.seq());
       CHECK(rec_in.qual() == rec_out.qual());
     }
-  }
-
-  // TODO: temporary fn, will replace once CompressedBuffers is split in
-  // 2 classes
-  static void prepareCbsForDecoding(CompressedBuffers &cbs) {
-    for (auto &storage : cbs.header_fields_in)
-      cbs.header_fields_out.push_back(convertToOutStorage(std::move(storage)));
   }
 };
 

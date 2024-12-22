@@ -32,7 +32,7 @@ EncodingContext::EncodingContext(const DatasetMeta *meta) : meta_(meta) {
 }
 
 void EncodingContext::encodeChunk(const FastqChunk &chunk,
-                                  CompressedBuffers &cbs) {
+                                  CompressedBuffersDst &cbs) {
   prepareCompressedBuffers(chunk, cbs);
   startNewChunk();
 
@@ -63,7 +63,8 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
   updateStats(cbs);
 }
 
-void EncodingContext::decodeChunk(FastqChunk &chunk, CompressedBuffers &cbs) {
+void EncodingContext::decodeChunk(FastqChunk &chunk,
+                                  CompressedBuffersSrc &cbs) {
   prepareFastqChunk(chunk, cbs);
   startNewChunk();
 
@@ -101,14 +102,14 @@ void EncodingContext::startNewChunk() {
 }
 
 void EncodingContext::encodeHeader(const std::string_view header,
-                                   CompressedBuffers &cbs) {
+                                   CompressedBuffersDst &cbs) {
   const auto &fmt = meta_->header_fmt;
   auto field_start = header.begin() + 1; /* skip '@' */
   for (std::size_t i = 0, E = fmt.n_fields() - 1; i < E; ++i) {
     const auto field_end =
         std::find(field_start + 1, header.end(), fmt.separators[i]);
 
-    auto &storage = cbs.header_fields_in[i];
+    auto &storage = cbs.header_fields[i];
     auto &prev_value = prev_header_fields_[i];
     if (fmt.field_types[i] == headers::FieldType::STRING) {
       storage.storeString(field_start, field_end,
@@ -122,7 +123,7 @@ void EncodingContext::encodeHeader(const std::string_view header,
   }
 
   // TODO: check how processing all fields inside the loop affects performance
-  auto &storage = cbs.header_fields_in.back();
+  auto &storage = cbs.header_fields.back();
   auto &prev_value = prev_header_fields_.back();
   if (fmt.field_types.back() == headers::FieldType::STRING) {
     storage.storeString(field_start, header.end(),
@@ -133,14 +134,14 @@ void EncodingContext::encodeHeader(const std::string_view header,
   }
 }
 
-unsigned EncodingContext::decodeHeader(char *dst, CompressedBuffers &cbs) {
+unsigned EncodingContext::decodeHeader(char *dst, CompressedBuffersSrc &cbs) {
   auto &fmt = meta_->header_fmt;
   char *const old_dst = dst;
   *dst++ = '@';
 
   for (std::size_t i = 0, E = fmt.n_fields() - 1; i < E; ++i) {
 
-    auto &storage = cbs.header_fields_out[i];
+    auto &storage = cbs.header_fields[i];
     auto &prev_value = prev_header_fields_[i];
     if (fmt.field_types[i] == headers::FieldType::STRING) {
       dst +=
@@ -153,7 +154,7 @@ unsigned EncodingContext::decodeHeader(char *dst, CompressedBuffers &cbs) {
     *dst++ += fmt.separators[i];
   }
 
-  auto &storage = cbs.header_fields_out.back();
+  auto &storage = cbs.header_fields.back();
   auto &prev_value = prev_header_fields_.back();
   if (fmt.field_types.back() == headers::FieldType::STRING) {
     dst += storage.loadNextString(dst, std::get<headers::string_t>(prev_value));
@@ -165,7 +166,7 @@ unsigned EncodingContext::decodeHeader(char *dst, CompressedBuffers &cbs) {
   return static_cast<unsigned>(dst - old_dst);
 }
 
-void EncodingContext::updateStats(const CompressedBuffers &cbs) {
+void EncodingContext::updateStats(const CompressedBuffersDst &cbs) {
   /* update stats */
   // TODO: also readlens and ns for sequences...
   comp_stats_.seq += cbs.seq.size();
@@ -175,7 +176,7 @@ void EncodingContext::updateStats(const CompressedBuffers &cbs) {
   // TODO: more detailed report on headers ?
   for (std::size_t i = 0, E = fmt.n_fields(); i < E; ++i) {
     auto &csize = comp_stats_.header_fields[i];
-    const auto &field = cbs.header_fields_in[i];
+    const auto &field = cbs.header_fields[i];
     if (fmt.field_types[i] == headers::FieldType::STRING) {
       csize += field.isDifferentFlag.size() + field.content.size() +
                field.contentLength.size();

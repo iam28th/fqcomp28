@@ -41,7 +41,7 @@ TEST_CASE("{store,load}String") {
   const std::vector<std::string> values = {
       "EAS687", "EAS688", "EAS688", "TI OBDUREN", "TI OBDUREN", "BEZNOGIM"};
 
-  FieldStorageIn in;
+  FieldStorageDst in;
   std::string_view prev = first;
   for (const auto &s : values) {
     string_t val = s;
@@ -49,7 +49,7 @@ TEST_CASE("{store,load}String") {
   }
   CHECK(in.isDifferentFlag.size() == values.size());
 
-  FieldStorageOut out = convertToOutStorage(std::move(in));
+  FieldStorageSrc out = convertToSrcStorage(std::move(in));
   std::vector<std::string> decoded_values{values.size()};
   prev = first;
   for (std::size_t i = 0; i < values.size(); ++i) {
@@ -89,7 +89,7 @@ TEST_CASE("{store,load}Numeric") {
     val = std::to_string(dist(engine));
   const std::string first = values.front();
 
-  FieldStorageIn in;
+  FieldStorageDst in;
   numeric_t prev = std::stoi(first);
   for (const auto &field : values) {
     const std::string_view field_view = field;
@@ -101,7 +101,7 @@ TEST_CASE("{store,load}Numeric") {
   CHECK(in.contentLength.size() == 0);
   CHECK(in.content.size() == n_values * sizeof(numeric_t));
 
-  FieldStorageOut out = convertToOutStorage(std::move(in));
+  FieldStorageSrc out = convertToSrcStorage(std::move(in));
   std::vector<std::string> decoded_values{values.size()};
   prev = std::stoi(first);
   for (std::size_t i = 0; i < values.size(); ++i) {

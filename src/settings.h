@@ -1,6 +1,11 @@
+#pragma once
 #include <filesystem>
 
+namespace fqzcomp28 {
+enum class Command { COMPRESS, DECOMPRESS, TEST };
+
 class Settings {
+public:
 private:
   Settings() = default;
 
@@ -29,6 +34,7 @@ public:
     unsigned read_chunk_size_Mb = 1;
     unsigned sample_chunk_size_Mb = 1;
     bool verbose = false;
+    Command cmd = Command::TEST;
   } non_storable;
 
   bool is_pe() const { return !non_storable.mates2.empty(); }
@@ -41,3 +47,4 @@ public:
     return non_storable.sample_chunk_size_Mb * 1024 * 1024;
   }
 };
+} // namespace fqzcomp28

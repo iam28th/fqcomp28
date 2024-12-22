@@ -9,14 +9,24 @@ namespace fqzcomp28 {
  * (header format, frequency tables, etc.)
  */
 struct DatasetMeta {
-  /**
-   * used for delta-ing the first header in each chunk
-   */
-  const std::string first_header;
 
-  const headers::HeaderFormatSpeciciation header_fmt;
+  DatasetMeta(std::string_view header)
+      : first_header(header), header_fmt(first_header) {}
 
-  DatasetMeta(const FastqChunk &);
+  DatasetMeta(const FastqChunk &chunk)
+      : first_header(chunk.records.front().header()), header_fmt(first_header) {
+  }
+
+  /** used for delta-ing the first header in each chunk */
+  std::string first_header;
+  headers::HeaderFormatSpeciciation header_fmt;
+
+  static void storeToStream(const DatasetMeta &, std::ostream &);
+  static DatasetMeta loadFromStream(std::istream &);
+
+  std::size_t sizeInArchive() const {
+    return sizeof(readlen_t) + first_header.size();
+  }
 };
 
 DatasetMeta analyzeDataset(path_t fastq_file, std::size_t sample_syte_bytes);

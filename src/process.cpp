@@ -1,4 +1,5 @@
 #include "app.h"
+#include "archive.h"
 #include "compressed_buffers.h"
 #include "defs.h"
 #include "encoding_context.h"
@@ -13,18 +14,18 @@
 #define FSE_STATIC_LINKING_ONLY
 #include <common/fse.h>
 
+namespace fqzcomp28 {
+
 std::vector<FSE_FUNCTION_TYPE>
 createCTableBuildWksp(const unsigned maxSymbolValue, const unsigned tableLog) {
   return std::vector<FSE_FUNCTION_TYPE>(
       FSE_BUILD_CTABLE_WORKSPACE_SIZE(maxSymbolValue, tableLog));
 }
 
-/**
- * fqzcomp28 entry point
- */
+/** fqzcomp28 entry point */
 int startProgram(int argc, char **argv) {
   CLI::App app;
-  addOptions(&app);
+  fqzcomp28::addOptions(&app);
 
   try {
     app.parse(argc, argv);
@@ -37,17 +38,18 @@ int startProgram(int argc, char **argv) {
   return 0;
 }
 
-namespace fqzcomp28 {
 void processReads() {
 
   const auto set = Settings::getInstance();
   const auto mates1 = set->non_storable.mates1;
 
+  Archive archive(set->non_storable.archive);
   const DatasetMeta meta = analyzeDataset(mates1, set->sample_chunk_size());
+  archive.writeArchiveHeader(meta);
 
   FastqChunk chunk;
   FastqReader reader(mates1, set->reading_chunk_size());
-  CompressedBuffers cbs;
+  CompressedBuffersDst cbs;
   EncodingContext ctx(&meta);
 
   while (reader.readNextChunk(chunk)) {

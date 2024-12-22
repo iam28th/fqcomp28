@@ -5,34 +5,29 @@
 
 namespace fqzcomp28 {
 
-// TODO: separate classes for compression and decompression
+template <typename T>
+  requires std::is_base_of_v<headers::FieldStorage, T>
 struct CompressedBuffers {
+  CompressedBuffers() = default;
   std::vector<std::byte> seq, qual;
-  std::vector<headers::FieldStorageIn> header_fields_in;
-
-  std::vector<headers::FieldStorageOut> header_fields_out;
-  std::size_t original_size;
-
-  // TODO: now it's stored as plain values;
-  // change to delta
   std::vector<readlen_t> readlens;
 
-#if 0
-  std::vector<readlen_t> n_counts;
-  std::vector<readlen_t> n_positions;
-#endif
+  std::vector<T> header_fields;
+
+  /** original size of reads encoded in this chunk */
+  uint64_t original_size;
 
   auto n_records() const { return readlens.size(); }
 
   void clear() {
     seq.clear();
     qual.clear();
-    for (auto &hf : header_fields_in)
+    for (auto &hf : header_fields)
       hf.clear();
   }
-
-  // TODO: methods putHeader, putLength, putSequence, ...
-  // nextHeader, nextLength ...
 };
+
+using CompressedBuffersSrc = CompressedBuffers<headers::FieldStorageSrc>;
+using CompressedBuffersDst = CompressedBuffers<headers::FieldStorageDst>;
 
 } // namespace fqzcomp28
