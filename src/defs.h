@@ -32,12 +32,13 @@ public:
 struct FastqChunk {
   FastqData raw_data;
   std::vector<FastqRecord> records;
-  /**
-   * accamulated over all reads
-   */
+
+  /** accamulated over all reads */
   std::size_t tot_reads_length = 0;
+  std::size_t headers_length = 0;
   void clear() {
     tot_reads_length = 0;
+    headers_length = 0;
     raw_data.clear();
     records.clear();
   }

@@ -86,11 +86,12 @@ std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
     case 0:
       rec.headerp = line_start;
       rec.header_length = static_cast<readlen_t>(line_length);
-      chunk.tot_reads_length += line_length;
+      chunk.headers_length += line_length;
       break;
     case 1:
       rec.seqp = line_start;
       rec.length = static_cast<readlen_t>(line_length);
+      chunk.tot_reads_length += line_length;
       break;
     case 2: /* skip fastq quality header */
       assert(*line_start == '+');

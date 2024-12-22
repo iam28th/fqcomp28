@@ -39,7 +39,6 @@ int startProgram(int argc, char **argv) {
 
 namespace fqzcomp28 {
 void processReads() {
-  // parse the first header
 
   const auto set = Settings::getInstance();
   const auto mates1 = set->non_storable.mates1;

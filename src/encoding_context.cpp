@@ -8,8 +8,8 @@
 namespace fqzcomp28 {
 
 EncodingContext::EncodingContext(const DatasetMeta *meta) : meta_(meta) {
-  const auto &fmt = meta->header_fmt;
-  const std::string_view first_header(meta->first_header);
+  const auto &fmt = meta_->header_fmt;
+  const std::string_view first_header(meta_->first_header);
 
   initalizeHeaderFields(first_header_fields_, fmt);
   initalizeHeaderFields(prev_header_fields_, fmt);
@@ -27,17 +27,17 @@ EncodingContext::EncodingContext(const DatasetMeta *meta) : meta_(meta) {
   convertHeaderFieldFromAscii(field_start, first_header.end(),
                               first_header_fields_.back(),
                               fmt.field_types.back());
+
+  comp_stats_.header_fields.resize(fmt.n_fields());
 }
 
 void EncodingContext::encodeChunk(const FastqChunk &chunk,
                                   CompressedBuffers &cbs) {
-  cbs.clear();
-  cbs.seq.resize(compressBoundSequence(chunk.tot_reads_length));
-  cbs.qual.resize(compressBoundQuality(chunk.tot_reads_length));
-
+  prepareCompressedBuffers(chunk, cbs);
   startNewChunk();
 
-  // TODO: a fn to preallocate space in cbs based on chunk
+  std::byte *dst_seq = cbs.seq.data();
+  std::byte *dst_qual = cbs.qual.data();
 
   for (const FastqRecord &r : chunk.records) {
     encodeHeader(r.header(), cbs);
@@ -45,41 +45,54 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
     // I want to check the general workflow first,
     // so for now - just copy sequence and qualities
     cbs.readlens.push_back(r.length);
-    cbs.seq.insert(cbs.seq.end(), to_byte_ptr(r.seqp),
-                   to_byte_ptr(r.seqp + r.length));
-    cbs.qual.insert(cbs.qual.end(), to_byte_ptr(r.qualp),
-                    to_byte_ptr(r.qualp + r.length));
+
+    std::memcpy(dst_seq, to_byte_ptr(r.seqp), r.length);
+    std::memcpy(dst_qual, to_byte_ptr(r.qualp), r.length);
+
+    dst_seq += r.length, dst_qual += r.length;
   }
+
+  const std::size_t compressed_size_seq =
+      static_cast<std::size_t>(dst_seq - cbs.seq.data());
+  const std::size_t compressed_size_qual =
+      static_cast<std::size_t>(dst_qual - cbs.qual.data());
+
+  cbs.seq.resize(compressed_size_seq);
+  cbs.qual.resize(compressed_size_qual);
+
+  updateStats(cbs);
 }
 
 void EncodingContext::decodeChunk(FastqChunk &chunk, CompressedBuffers &cbs) {
+  prepareFastqChunk(chunk, cbs);
   startNewChunk();
-#if 0
-  chunk.records.resize(cbs.n_records());
 
-  // TODO: use unsigned char everywhere
   char *dst = chunk.raw_data.data();
   const std::byte *src_seq = cbs.seq.data();
   const std::byte *src_qual = cbs.qual.data();
 
+  // TODO: might skip assigning record fields as not necessary
   for (std::size_t i = 0, E = cbs.n_records(); i < E; ++i) {
     auto &r = chunk.records[i];
-
-    r.header_length = decodeHeader(dst, cbs, i);
+    r.headerp = dst;
+    r.header_length = static_cast<readlen_t>(decodeHeader(dst, cbs));
     dst += r.header_length;
     *dst++ = '\n';
 
+    r.seqp = dst;
     r.length = cbs.readlens[i];
     std::memcpy(dst, src_seq, r.length);
+    dst += r.length;
     *dst++ = '\n';
 
+    r.qualp = dst;
     std::memcpy(dst, src_qual, r.length);
+    dst += r.length;
     *dst++ = '\n';
 
     src_seq += r.length;
     src_qual += r.length;
   }
-#endif
 }
 
 void EncodingContext::startNewChunk() {
@@ -152,9 +165,25 @@ unsigned EncodingContext::decodeHeader(char *dst, CompressedBuffers &cbs) {
   return static_cast<unsigned>(dst - old_dst);
 }
 
-/**
- * put default-constructed value into each field according to header format
- */
+void EncodingContext::updateStats(const CompressedBuffers &cbs) {
+  /* update stats */
+  // TODO: also readlens and ns for sequences...
+  comp_stats_.seq += cbs.seq.size();
+  comp_stats_.qual += cbs.qual.size();
+  const auto &fmt = meta_->header_fmt;
+  // TODO: will call further compression on headers
+  // TODO: more detailed report on headers ?
+  for (std::size_t i = 0, E = fmt.n_fields(); i < E; ++i) {
+    auto &csize = comp_stats_.header_fields[i];
+    const auto &field = cbs.header_fields_in[i];
+    if (fmt.field_types[i] == headers::FieldType::STRING) {
+      csize += field.isDifferentFlag.size() + field.content.size() +
+               field.contentLength.size();
+    } else
+      csize += field.content.size();
+  }
+}
+
 void EncodingContext::initalizeHeaderFields(
     header_fields_t &fields, const headers::HeaderFormatSpeciciation &fmt) {
   fields.resize(fmt.n_fields());

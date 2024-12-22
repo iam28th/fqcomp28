@@ -3,6 +3,7 @@
 #include "defs.h"
 #include "headers.h"
 #include "prepare.h"
+#include "report.h"
 #include <vector>
 
 namespace fqzcomp28 {
@@ -16,7 +17,7 @@ class EncodingContext {
    */
   static constexpr std::size_t extra_cbuffer_size = 1024;
 
-  /* we assume that it's at least as good as bit-packing */
+  /** we assume that it's at least as good as bit-packing */
   static std::size_t compressBoundSequence(std::size_t original_size) {
     return original_size / 4 + extra_cbuffer_size;
   }
@@ -26,21 +27,32 @@ class EncodingContext {
     return original_size / 8 * 7 + extra_cbuffer_size;
   }
 
+  /** reserves enough space in `cbs` to encode `chunk`
+   * & write stuff required for decompression */
+  void prepareCompressedBuffers(const FastqChunk &chunk,
+                                CompressedBuffers &cbs) {
+    cbs.clear();
+    cbs.original_size = chunk.raw_data.size();
+    cbs.seq.resize(compressBoundSequence(chunk.tot_reads_length));
+    cbs.qual.resize(compressBoundQuality(chunk.tot_reads_length));
+    cbs.header_fields_in.resize(meta_->header_fmt.n_fields());
+  }
+
+  /** reserves enough space in `chunk` to decode `cbs` */
+  static void prepareFastqChunk(FastqChunk &chunk,
+                                const CompressedBuffers &cbs) {
+    chunk.clear();
+    chunk.raw_data.resize(cbs.original_size);
+    chunk.records.resize(cbs.n_records());
+  }
+
 public:
   EncodingContext(const DatasetMeta *meta);
 
-  /**
-   * encodes reads into cbs, allocating memory in cbs as needed
-   */
+  /** encodes reads into cbs, allocating memory in cbs as needed */
   void encodeChunk(const FastqChunk &, CompressedBuffers &cbs);
 
-  /**
-   * decodes reads from cbs into chunk; space in chunk must be
-   * we somehow must know number of reads ?
-   * preallocated
-   * // TODO: store stuff required for allocation in CompressedBuffers
-   * // to make API symmetric
-   */
+  /** decodes reads from cbs into chunk; resizes chunk as needed */
   void decodeChunk(FastqChunk &chunk, CompressedBuffers &cbs);
 
   friend struct EncodingContextTester;
@@ -48,10 +60,10 @@ public:
 private:
   void encodeHeader(const std::string_view header, CompressedBuffers &cbs);
 
-  /**
-   * @return number of bytes written
-   */
+  /** @return number of bytes written to dst */
   unsigned decodeHeader(char *dst, CompressedBuffers &cbs);
+
+  void updateStats(const CompressedBuffers &cbs);
 
   /**
    * must be called to reset context before encoding or
@@ -62,19 +74,21 @@ private:
   const DatasetMeta *const meta_;
 
   headers::field_data_t current_field_;
-  /**
-   * context for header encoding
-   */
-  header_fields_t first_header_fields_;
-  header_fields_t prev_header_fields_;
 
+  /** context for header encoding */
+  header_fields_t prev_header_fields_;
+  header_fields_t first_header_fields_;
+
+  /** accumulates statistics across encoded chunks */
+  CompressedSizes comp_stats_;
+
+  /**
+   * put default-constructed value into each field according to header format
+   */
   static void
   initalizeHeaderFields(header_fields_t &fields,
                         const headers::HeaderFormatSpeciciation &fmt);
 
-  /**
-   * @brief
-   */
   static void
   convertHeaderFieldFromAscii(std::string_view::iterator field_start,
                               std::string_view::iterator field_end,

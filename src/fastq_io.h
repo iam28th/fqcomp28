@@ -16,6 +16,7 @@ public:
 
   /**
    * sets pointers in chunk.reads;
+   *
    * @return position at which a partially loaded read starts
    */
   static std::size_t parseRecords(FastqChunk &chunk);

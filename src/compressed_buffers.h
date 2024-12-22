@@ -9,7 +9,9 @@ namespace fqzcomp28 {
 struct CompressedBuffers {
   std::vector<std::byte> seq, qual;
   std::vector<headers::FieldStorageIn> header_fields_in;
+
   std::vector<headers::FieldStorageOut> header_fields_out;
+  std::size_t original_size;
 
   // TODO: now it's stored as plain values;
   // change to delta
