@@ -5,7 +5,6 @@
 #include "encoding_context.h"
 #include "fastq_io.h"
 #include "fse_compressor.h"
-#include "prepare.h"
 #include "settings.h"
 #include <iostream>
 #include <vector>
@@ -43,14 +42,12 @@ void processReads() {
   const auto set = Settings::getInstance();
   const auto mates1 = set->non_storable.mates1;
 
-  Archive archive(set->non_storable.archive);
-  const DatasetMeta meta = analyzeDataset(mates1, set->sample_chunk_size());
-  archive.writeArchiveHeader(meta);
+  Archive archive(set->non_storable.archive, mates1);
 
   FastqChunk chunk;
   FastqReader reader(mates1, set->reading_chunk_size());
   CompressedBuffersDst cbs;
-  EncodingContext ctx(&meta);
+  EncodingContext ctx(&archive.meta());
 
   while (reader.readNextChunk(chunk)) {
     ctx.encodeChunk(chunk, cbs);

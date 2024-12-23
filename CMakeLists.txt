@@ -10,11 +10,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # exports compile_commands.json - used by clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# link-time opimization enabled when available
-# TODO: add a switch to disable; once done, check its effect on performance
-include(CheckIPOSupported)
-check_ipo_supported(RESULT ipo_supported)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${ipo_supported})
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    # TODO check its effect on performance
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_supported)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${ipo_supported})
+endif()
 
 add_subdirectory(src bin)
 if (${BUILD_TESTING}) 

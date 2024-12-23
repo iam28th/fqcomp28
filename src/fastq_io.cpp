@@ -38,7 +38,7 @@ bool FastqReader::readNextChunk(FastqChunk &chunk) {
   assert(actual_chunk_size <= reading_size_);
 
   /* store partial record */
-  partial1_.resize(reading_size_ - actual_chunk_size);
+  partial1_.resize(chunk.raw_data.size() - actual_chunk_size);
   std::memcpy(partial1_.data(), chunk.raw_data.data() + actual_chunk_size,
               partial1_.size());
 

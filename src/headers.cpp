@@ -9,10 +9,43 @@
 namespace fqzcomp28 {
 namespace headers {
 
-HeaderFormatSpeciciation::HeaderFormatSpeciciation(
-    const std::string_view header) {
+field_data_t fieldFromAscii(std::string_view::iterator s,
+                            std::string_view::iterator e, FieldType typ) {
+  field_data_t ret;
+  if (typ == FieldType::STRING) {
+    ret = string_t{};
+    std::get<headers::string_t>(ret) = {s, e};
+  } else {
+    headers::numeric_t &val = std::get<headers::numeric_t>(ret);
+    [[maybe_unused]] auto [_, ec] = std::from_chars(s, e, val);
+    assert(ec == std::errc()); /* no error */
+  }
+  return ret;
+}
+
+header_fields_t fromHeader(const std::string_view header,
+                           const HeaderFormatSpeciciation &fmt) {
+  header_fields_t fields(fmt.n_fields());
+
+  auto field_start = header.begin() + 1; /* skip '@' */
+  for (std::size_t i = 0, E = fmt.n_fields() - 1; i < E; ++i) {
+    const auto field_end =
+        std::find(field_start + 1, header.end(), fmt.separators[i]);
+
+    fields[i] = fieldFromAscii(field_start, field_end, fmt.field_types[i]);
+    field_start = field_end + 1; /* skip separator */
+  }
+  fields.back() =
+      fieldFromAscii(field_start, header.end(), fmt.field_types.back());
+
+  return fields;
+}
+
+HeaderFormatSpeciciation
+HeaderFormatSpeciciation::fromHeader(const std::string_view header) {
   assert(header[0] == '@');
 
+  HeaderFormatSpeciciation fmt;
   auto field_start = header.begin() + 1;
 
   for (;;) {
@@ -23,19 +56,21 @@ HeaderFormatSpeciciation::HeaderFormatSpeciciation(
 
     if (std::all_of(field.begin(), field.end(),
                     [](char c) { return std::isdigit(c); }))
-      field_types.push_back(FieldType::NUMERIC);
+      fmt.field_types.push_back(FieldType::NUMERIC);
     else
-      field_types.push_back(FieldType::STRING);
+      fmt.field_types.push_back(FieldType::STRING);
 
     if (sep == header.end())
       break;
     if (sep == header.end() - 1) /* this should be generally the case */
       throw std::invalid_argument(std::string(header) +
                                   ": header should end in alnum char");
-    separators.push_back(*sep);
+    fmt.separators.push_back(*sep);
 
     field_start = sep + 1;
   }
+
+  return fmt;
 }
 
 void FieldStorageDst::storeString(string_t::iterator field_start,

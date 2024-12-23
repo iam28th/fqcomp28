@@ -18,12 +18,16 @@ struct CompressionStats {
 #endif
 
 struct InputStats {
-  std::size_t seq, header;
+  std::size_t seq;
+  std::size_t header;
   std::size_t n_records;
 };
 
 struct CompressedSizes {
-  std::size_t seq, qual;
+  std::size_t readlens;
+  std::size_t qual;
+  std::size_t seq, n_count, n_pos;
+
   std::vector<std::size_t> header_fields;
 };
 } // namespace fqzcomp28

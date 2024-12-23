@@ -1,25 +1,27 @@
-Reimplementation of fqzcomp4 compression tool with caryless rangecoder replaced by huff0 codec & static mode for increased throughput
+Reimplementation of fqzcomp4 compression tool with caryless rangecoder replaced by fse codec & static mode for increased throughput
 
 # Building
 
 ```bash
 git clone git@github.com:iam28th/fqzcomp28.git
 cd fqzcomp28
-cmake -S src -B build 
+cmake -S . -B build
 cmake --build build
 ```
-after that the executable is `./build/bin/fqzcomp28` 
-TODO: copy/move executable to project root in CMake 
+after that the executable is `./build/bin/fqzcomp28`
+TODO: copy/move executable to project root in CMake
 
-// gcc version ≥ 11 is needed (requirement comes from SeqAn3).
+// TODO invistigate compatable gcc/clang
 
 # Usage
 
 # Comparison with fqzcomp
 
-# Limitations 
+# Limitations
 
-## Headers
-header in the dataset should have the same structure
-its "fields" (that is, substrings between two non-alphanumeric characters) must be no more than 255 characters long
-the last character in a header must be alphanumeric
+- read lengths currently must be <= 32767
+- bases must be one of `ACGTN`
+- headers
+    - must all have same structure
+    - "fields" (that is, substrings between two non-alphanumeric characters) must be no more than 255 characters long
+    - the last character in a header must be alphanumeric

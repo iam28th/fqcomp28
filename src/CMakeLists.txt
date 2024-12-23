@@ -5,6 +5,7 @@ add_library(fqzcomp28Core OBJECT
     archive.cpp
     compressed_buffers.cpp
     encoding_context.cpp
+    memcompress.cpp
     fastq_io.cpp
     headers.cpp
     prepare.cpp
@@ -30,11 +31,12 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # also have these flags
     target_compile_options(fqzcomp28Core PUBLIC
         -Wall
+        -Wextra
         -Wconversion
-        -Wsign-conversion
         -Wold-style-cast
         -Wcast-align
-        -Wextra
+        -Wnrvo
+        -Wpessimizing-move
         -frecord-gcc-switches  # to retain certain flags in the executable
         -g3
         $<$<CONFIG:DEBUG>:-O0>

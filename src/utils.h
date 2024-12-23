@@ -1,4 +1,5 @@
 #pragma once
+#include <cstring>
 #include <string_view>
 #include <vector>
 
@@ -13,6 +14,18 @@ void storeAsBytes(const T val, std::vector<std::byte> &storage)
 {
   const std::byte *p = reinterpret_cast<const std::byte *>(&val);
   storage.insert(storage.end(), p, p + sizeof(val));
+}
+
+/**
+ * @param i - Index in storage at which the object starts
+ */
+template <typename T>
+  requires std::is_trivially_copyable_v<T>
+T loadFromBytes(const std::vector<std::byte> &storage, const std::size_t i) {
+  T ret;
+  std::memcpy(reinterpret_cast<std::byte *>(&ret), storage.data() + i,
+              sizeof(T));
+  return ret;
 }
 
 template <std::random_access_iterator T> auto to_byte_ptr(T it) {

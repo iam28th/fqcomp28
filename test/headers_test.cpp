@@ -14,7 +14,7 @@ TEST_CASE("HeaderFormatSpec") {
   using enum FieldType;
 
   std::string header1 = "@SRR22543904.1 1 length=150";
-  HeaderFormatSpeciciation fmt1(header1);
+  const auto fmt1 = HeaderFormatSpeciciation::fromHeader(header1);
 
   REQUIRE(fmt1.n_fields() == 5);
   REQUIRE(fmt1.field_types ==
@@ -23,7 +23,7 @@ TEST_CASE("HeaderFormatSpec") {
 
   std::string header2 =
       "@SRR065390.1000 HWUSI-EAS687_61DAJ:8:1:1174:9158 length=100";
-  HeaderFormatSpeciciation fmt2(header2);
+  const auto fmt2 = HeaderFormatSpeciciation::fromHeader(header2);
   REQUIRE(fmt2.n_fields() == 11);
   REQUIRE(fmt2.field_types == std::vector{STRING, NUMERIC, STRING, STRING,
                                           STRING, NUMERIC, NUMERIC, NUMERIC,

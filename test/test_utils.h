@@ -23,12 +23,18 @@ convertToSrcStorage(headers::FieldStorageDst &&dst) {
 
 inline CompressedBuffersSrc convertToSrcBuffers(CompressedBuffersDst &&in) {
   CompressedBuffersSrc src;
-  src.original_size = in.original_size;
+
+  src.original_size = std::move(in.original_size);
   src.seq = std::move(in.seq);
   src.qual = std::move(in.qual);
+
   src.readlens = std::move(in.readlens);
+  src.compressed_readlens = std::move(in.compressed_readlens);
+
   for (auto &hf : in.header_fields)
     src.header_fields.push_back(convertToSrcStorage(std::move(hf)));
+
+  src.compressed_header_fields = std::move(in.compressed_header_fields);
 
   return src;
 }

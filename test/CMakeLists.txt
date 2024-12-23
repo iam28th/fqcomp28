@@ -4,11 +4,13 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/catchorg/Catch2
     GIT_TAG        v3.7.1
 )
+set(CATCH_CONFIG_DISABLE_MATCHERS ON)
 FetchContent_MakeAvailable(Catch2)
 
 
 add_executable(unit_tests
     test_utils.cpp
+    archive_test.cpp
     fastq_io_test.cpp
     headers_test.cpp
     encoding_context_test.cpp

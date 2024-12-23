@@ -19,7 +19,6 @@ using FastqData = std::vector<char>;
 struct FastqRecord {
   // TODO: make parsing a static method of FastqRecord?
   // then fields can be made private...
-  // TODO: two string_view-s of the same size is redundant
 public:
   const char *seqp, *qualp, *headerp;
   readlen_t length, header_length;

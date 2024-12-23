@@ -3,6 +3,10 @@
 
 namespace fqzcomp28 {
 
+bool operator==(const DatasetMeta &lhs, const DatasetMeta &rhs) {
+  return lhs.first_header == rhs.first_header;
+}
+
 void DatasetMeta::storeToStream(const DatasetMeta &meta, std::ostream &os) {
   // so far, only write the header... later will add frequency tables from fse
   const auto hlen = static_cast<readlen_t>(meta.first_header.size());

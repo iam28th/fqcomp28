@@ -1,40 +1,26 @@
 #include "encoding_context.h"
 #include "headers.h"
+#include "memcompress.h"
 #include "utils.h"
 #include <algorithm>
-#include <charconv>
 #include <cstring>
 
 namespace fqzcomp28 {
 
-EncodingContext::EncodingContext(const DatasetMeta *meta) : meta_(meta) {
-  const auto &fmt = meta_->header_fmt;
-  const std::string_view first_header(meta_->first_header);
+EncodingContext::EncodingContext(const DatasetMeta *meta)
+    : meta_(meta),
+      fmt_(headers::HeaderFormatSpeciciation::fromHeader(meta->first_header)),
+      first_header_fields_(fromHeader(meta->first_header, fmt_)) {
 
-  initalizeHeaderFields(first_header_fields_, fmt);
-  initalizeHeaderFields(prev_header_fields_, fmt);
-
-  auto field_start = first_header.begin() + 1; /* skip '@' */
-  for (std::size_t field_idx = 0, E = fmt.n_fields() - 1; field_idx < E;
-       ++field_idx) {
-    const auto field_end = std::find(field_start + 1, first_header.end(),
-                                     fmt.separators[field_idx]);
-    convertHeaderFieldFromAscii(field_start, field_end,
-                                first_header_fields_[field_idx],
-                                fmt.field_types[field_idx]);
-    field_start = field_end + 1; /* skip separator */
-  }
-  convertHeaderFieldFromAscii(field_start, first_header.end(),
-                              first_header_fields_.back(),
-                              fmt.field_types.back());
-
-  comp_stats_.header_fields.resize(fmt.n_fields());
+  comp_stats_.header_fields.resize(fmt_.n_fields());
 }
 
 void EncodingContext::encodeChunk(const FastqChunk &chunk,
                                   CompressedBuffersDst &cbs) {
-  prepareCompressedBuffers(chunk, cbs);
+  prepareBuffersForEncoding(chunk, cbs);
   startNewChunk();
+
+  assert(prev_header_fields_ == first_header_fields_);
 
   std::byte *dst_seq = cbs.seq.data();
   std::byte *dst_qual = cbs.qual.data();
@@ -42,10 +28,10 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
   for (const FastqRecord &r : chunk.records) {
     encodeHeader(r.header(), cbs);
 
+    storeAsBytes(r.length, cbs.readlens);
+
     // I want to check the general workflow first,
     // so for now - just copy sequence and qualities
-    cbs.readlens.push_back(r.length);
-
     std::memcpy(dst_seq, to_byte_ptr(r.seqp), r.length);
     std::memcpy(dst_qual, to_byte_ptr(r.qualp), r.length);
 
@@ -59,8 +45,13 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
 
   cbs.seq.resize(compressed_size_seq);
   cbs.qual.resize(compressed_size_qual);
+  /* other fields are updated in compress misc buffers */
+  comp_stats_.seq += compressed_size_seq;
+  comp_stats_.qual += compressed_size_seq;
 
-  updateStats(cbs);
+  cbs.original_size.n_records = chunk.records.size();
+  cbs.original_size.total = chunk.raw_data.size();
+  compressMiscBuffers(cbs);
 }
 
 void EncodingContext::decodeChunk(FastqChunk &chunk,
@@ -68,12 +59,14 @@ void EncodingContext::decodeChunk(FastqChunk &chunk,
   prepareFastqChunk(chunk, cbs);
   startNewChunk();
 
+  decompressMiscBuffers(cbs);
+
   char *dst = chunk.raw_data.data();
   const std::byte *src_seq = cbs.seq.data();
   const std::byte *src_qual = cbs.qual.data();
 
   // TODO: might skip assigning record fields as not necessary
-  for (std::size_t i = 0, E = cbs.n_records(); i < E; ++i) {
+  for (std::size_t i = 0, E = cbs.original_size.n_records; i < E; ++i) {
     auto &r = chunk.records[i];
     r.headerp = dst;
     r.header_length = static_cast<readlen_t>(decodeHeader(dst, cbs));
@@ -81,7 +74,7 @@ void EncodingContext::decodeChunk(FastqChunk &chunk,
     *dst++ = '\n';
 
     r.seqp = dst;
-    r.length = cbs.readlens[i];
+    r.length = loadFromBytes<readlen_t>(cbs.readlens, 2 * i);
     std::memcpy(dst, src_seq, r.length);
     dst += r.length;
     *dst++ = '\n';
@@ -103,15 +96,14 @@ void EncodingContext::startNewChunk() {
 
 void EncodingContext::encodeHeader(const std::string_view header,
                                    CompressedBuffersDst &cbs) {
-  const auto &fmt = meta_->header_fmt;
   auto field_start = header.begin() + 1; /* skip '@' */
-  for (std::size_t i = 0, E = fmt.n_fields() - 1; i < E; ++i) {
+  for (std::size_t i = 0, E = fmt_.n_fields() - 1; i < E; ++i) {
     const auto field_end =
-        std::find(field_start + 1, header.end(), fmt.separators[i]);
+        std::find(field_start + 1, header.end(), fmt_.separators[i]);
 
     auto &storage = cbs.header_fields[i];
     auto &prev_value = prev_header_fields_[i];
-    if (fmt.field_types[i] == headers::FieldType::STRING) {
+    if (fmt_.field_types[i] == headers::FieldType::STRING) {
       storage.storeString(field_start, field_end,
                           std::get<headers::string_t>(prev_value));
     } else {
@@ -125,7 +117,7 @@ void EncodingContext::encodeHeader(const std::string_view header,
   // TODO: check how processing all fields inside the loop affects performance
   auto &storage = cbs.header_fields.back();
   auto &prev_value = prev_header_fields_.back();
-  if (fmt.field_types.back() == headers::FieldType::STRING) {
+  if (fmt_.field_types.back() == headers::FieldType::STRING) {
     storage.storeString(field_start, header.end(),
                         std::get<headers::string_t>(prev_value));
   } else {
@@ -135,15 +127,14 @@ void EncodingContext::encodeHeader(const std::string_view header,
 }
 
 unsigned EncodingContext::decodeHeader(char *dst, CompressedBuffersSrc &cbs) {
-  auto &fmt = meta_->header_fmt;
   char *const old_dst = dst;
   *dst++ = '@';
 
-  for (std::size_t i = 0, E = fmt.n_fields() - 1; i < E; ++i) {
-
+  for (std::size_t i = 0, E = fmt_.n_fields() - 1; i < E; ++i) {
     auto &storage = cbs.header_fields[i];
     auto &prev_value = prev_header_fields_[i];
-    if (fmt.field_types[i] == headers::FieldType::STRING) {
+
+    if (fmt_.field_types[i] == headers::FieldType::STRING) {
       dst +=
           storage.loadNextString(dst, std::get<headers::string_t>(prev_value));
     } else {
@@ -151,12 +142,12 @@ unsigned EncodingContext::decodeHeader(char *dst, CompressedBuffersSrc &cbs) {
                                      std::get<headers::numeric_t>(prev_value));
     }
 
-    *dst++ += fmt.separators[i];
+    *dst++ += fmt_.separators[i];
   }
-
   auto &storage = cbs.header_fields.back();
   auto &prev_value = prev_header_fields_.back();
-  if (fmt.field_types.back() == headers::FieldType::STRING) {
+
+  if (fmt_.field_types.back() == headers::FieldType::STRING) {
     dst += storage.loadNextString(dst, std::get<headers::string_t>(prev_value));
   } else {
     dst +=
@@ -166,48 +157,106 @@ unsigned EncodingContext::decodeHeader(char *dst, CompressedBuffersSrc &cbs) {
   return static_cast<unsigned>(dst - old_dst);
 }
 
+void EncodingContext::prepareBuffersForEncoding(const FastqChunk &chunk,
+                                                CompressedBuffersDst &cbs) {
+  cbs.clear();
+
+  // TODO: estimate compressed sizes for all buffers during
+  // initial dataset analysis
+  cbs.seq.resize(compressBoundSequence(chunk.tot_reads_length));
+  cbs.qual.resize(compressBoundQuality(chunk.tot_reads_length));
+
+  cbs.header_fields.resize(fmt_.n_fields());
+  cbs.compressed_header_fields.resize(fmt_.n_fields());
+  cbs.original_size.header_fields.resize(fmt_.n_fields());
+  for (auto &field : cbs.header_fields)
+    field.clear();
+}
+
+void EncodingContext::compressMiscBuffers(CompressedBuffersDst &cbs) {
+  // TODO: N counts, N pos...
+  cbs.original_size.readlens = static_cast<uint32_t>(cbs.readlens.size());
+  comp_stats_.readlens += compressBuffer(cbs.compressed_readlens, cbs.readlens);
+
+  for (std::size_t i = 0, E = fmt_.n_fields(); i < E; ++i) {
+    auto &field_csize = comp_stats_.header_fields[i];
+    auto &field_data = cbs.header_fields[i];
+    auto &field_cdata = cbs.compressed_header_fields[i];
+
+    auto &original_size = cbs.original_size.header_fields[i];
+
+    if (fmt_.field_types[i] == headers::FieldType::STRING) {
+      field_csize += compressBuffer(field_cdata.isDifferentFlag,
+                                    field_data.isDifferentFlag);
+      field_csize += compressBuffer(field_cdata.content, field_data.content);
+      field_csize +=
+          compressBuffer(field_cdata.contentLength, field_data.contentLength);
+
+      original_size.isDifferentFlag = field_data.isDifferentFlag.size();
+      original_size.content = field_data.content.size();
+      original_size.contentLength = field_data.contentLength.size();
+
+    } else { /* NUMERIC */
+      field_csize += compressBuffer(field_cdata.content, field_data.content);
+
+      original_size.content = field_data.content.size();
+    }
+  }
+}
+
+void EncodingContext::decompressMiscBuffers(CompressedBuffersSrc &cbs) {
+  cbs.readlens.resize(cbs.original_size.readlens);
+  memdecompress(cbs.readlens.data(), cbs.compressed_readlens.data(),
+                cbs.compressed_readlens.size());
+
+  for (std::size_t i = 0, E = fmt_.n_fields(); i < E; ++i) {
+    auto &field_data = cbs.header_fields[i];
+    auto &field_cdata = cbs.compressed_header_fields[i];
+
+    auto &original_size = cbs.original_size.header_fields[i];
+    if (fmt_.field_types[i] == headers::FieldType::STRING) {
+      field_data.isDifferentFlag.resize(original_size.isDifferentFlag);
+      field_data.content.resize(original_size.content);
+      field_data.contentLength.resize(original_size.contentLength);
+
+      memdecompress(field_data.isDifferentFlag.data(),
+                    field_cdata.isDifferentFlag.data(),
+                    field_cdata.isDifferentFlag.size());
+      memdecompress(field_data.content.data(), field_cdata.content.data(),
+                    field_cdata.content.size());
+      memdecompress(field_data.contentLength.data(),
+                    field_cdata.contentLength.data(),
+                    field_cdata.contentLength.size());
+    } else {
+      field_data.content.resize(original_size.content);
+      memdecompress(field_data.content.data(), field_cdata.content.data(),
+                    field_cdata.content.size());
+    }
+  }
+}
+
+std::size_t EncodingContext::compressBuffer(std::vector<std::byte> &dst,
+                                            const std::vector<std::byte> &src) {
+  dst.resize(src.size() + extra_cbuffer_size);
+  const std::size_t csize = memcompress(dst.data(), src.data(), src.size());
+  dst.resize(csize);
+  return csize;
+}
+
 void EncodingContext::updateStats(const CompressedBuffersDst &cbs) {
   /* update stats */
-  // TODO: also readlens and ns for sequences...
+  // TODO: also account for readlens and ns for sequences...
   comp_stats_.seq += cbs.seq.size();
   comp_stats_.qual += cbs.qual.size();
-  const auto &fmt = meta_->header_fmt;
-  // TODO: will call further compression on headers
   // TODO: more detailed report on headers ?
-  for (std::size_t i = 0, E = fmt.n_fields(); i < E; ++i) {
+  for (std::size_t i = 0, E = fmt_.n_fields(); i < E; ++i) {
     auto &csize = comp_stats_.header_fields[i];
     const auto &field = cbs.header_fields[i];
-    if (fmt.field_types[i] == headers::FieldType::STRING) {
+    if (fmt_.field_types[i] == headers::FieldType::STRING) {
       csize += field.isDifferentFlag.size() + field.content.size() +
                field.contentLength.size();
     } else
       csize += field.content.size();
   }
 }
-
-void EncodingContext::initalizeHeaderFields(
-    header_fields_t &fields, const headers::HeaderFormatSpeciciation &fmt) {
-  fields.resize(fmt.n_fields());
-  for (std::size_t i = 0; i < fmt.n_fields(); ++i) {
-    if (fmt.field_types[i] == headers::FieldType::STRING)
-      fields[i] = headers::string_t{};
-    else
-      fields[i] = headers::numeric_t{};
-  }
-}
-
-void EncodingContext::convertHeaderFieldFromAscii(
-    std::string_view::iterator field_start,
-    std::string_view::iterator field_end, headers::field_data_t &to,
-    headers::FieldType typ) {
-  if (typ == headers::FieldType::STRING)
-    std::get<headers::string_t>(to) = {field_start, field_end};
-  else {
-    headers::numeric_t &val = std::get<headers::numeric_t>(to);
-    [[maybe_unused]] auto [_, ec] =
-        std::from_chars(field_start, field_end, val);
-    assert(ec == std::errc()); /* no error */
-  }
-}
-
 } // namespace fqzcomp28

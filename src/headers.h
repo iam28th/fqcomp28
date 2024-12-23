@@ -15,37 +15,40 @@ namespace headers {
  * how we parse & store header segments
  * TODO: other special fields, e.g. for index sequence
  */
-enum class FieldType { NUMERIC = 0, STRING };
-
-/* string_t is a view into either the first or the previous header */
-using numeric_t = int32_t;
-using string_t = std::string_view;
-using field_data_t = std::variant<numeric_t, string_t>;
-
 constexpr std::size_t FIELDLEN_MAX = 255;
 
-/**
- * describes the structure of a header
- */
+enum class FieldType { NUMERIC = 0, STRING };
+
+using string_t = std::string_view;
+using numeric_t = int32_t;
+
+using field_data_t = std::variant<numeric_t, string_t>;
+field_data_t fieldFromAscii(std::string_view::iterator s,
+                            std::string_view::iterator e, FieldType);
+
+/** describes the structure of headers */
 struct HeaderFormatSpeciciation {
-  /**
-   * fills specification (i.e., number and types of fields) from
-   * example header
-   */
-  HeaderFormatSpeciciation(const std::string_view header);
+  HeaderFormatSpeciciation() = default;
 
   std::vector<FieldType> field_types;
   std::vector<char> separators;
   auto n_fields() const { return field_types.size(); }
+
+  /**
+   * fills specification (i.e., number and types of fields) from
+   * example header
+   */
+  static HeaderFormatSpeciciation fromHeader(const std::string_view header);
 };
 
-/**
- * holds a certain field of multiple headers
- */
-struct FieldStorage {
-protected:
-  FieldStorage() = default;
+using header_fields_t = std::vector<headers::field_data_t>;
 
+/** @return Header fields constructed from `header` according to `fmt */
+header_fields_t fromHeader(const std::string_view header,
+                           const HeaderFormatSpeciciation &fmt);
+
+/** holds a certain field of multiple headers */
+struct FieldStorage {
 public:
   /**
    * for STRING - if the field' value is the same as
@@ -60,6 +63,11 @@ public:
   std::vector<std::byte> isDifferentFlag;
   std::vector<std::byte> content;
   std::vector<std::byte> contentLength;
+
+  /** helper struct to load original sizes into during decompression */
+  struct sizes {
+    uint64_t isDifferentFlag, content, contentLength;
+  };
 
   virtual ~FieldStorage() = default;
 
@@ -93,6 +101,9 @@ struct FieldStorageSrc : public FieldStorage {
     index = {};
   }
 };
+
+/** holds a certain field of multiple headers after general compression */
+using CompressedFieldStorage = FieldStorage;
 
 } // namespace headers
 } // namespace fqzcomp28

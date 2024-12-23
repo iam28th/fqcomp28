@@ -17,7 +17,7 @@ struct EncodingContextTester {
     ctx.startNewChunk();
 
     CompressedBuffersDst cbs_dst;
-    ctx.prepareCompressedBuffers(chunk, cbs_dst);
+    ctx.prepareBuffersForEncoding(chunk, cbs_dst);
 
     /* concatenated original headers */
     std::vector<char> original_headers;
@@ -43,7 +43,7 @@ struct EncodingContextTester {
 
   static void encodeChunk() {
     // TODO probably can repeat this code only once somehow
-    const path_t input = "test/data/SRR065390_1_first5.fastq";
+    const path_t input = "test/data/SRR065390_sub_1.fastq";
     const FastqChunk chunk_in = loadFastqFileContents(input);
     const DatasetMeta meta(chunk_in);
 
@@ -57,7 +57,6 @@ struct EncodingContextTester {
     CompressedBuffersSrc src = convertToSrcBuffers(std::move(cbs));
     ctx.decodeChunk(chunk_out, src);
 
-    // CHECK(chunk_out.raw_data == chunk_in.raw_data);
     CHECK(chunk_out.records.size() == chunk_in.records.size());
     for (std::size_t i = 0, E = chunk_in.records.size(); i < E; ++i) {
       const auto &rec_in = chunk_in.records[i], rec_out = chunk_out.records[i];
