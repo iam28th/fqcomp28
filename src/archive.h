@@ -3,6 +3,7 @@
 #include "defs.h"
 #include "prepare.h"
 #include "settings.h"
+#include "utils.h"
 #include <fstream>
 
 namespace fqzcomp28 {
@@ -27,7 +28,7 @@ public:
               Settings::getDefaultsInstance()->sample_chunk_size());
 
   void writeBlock(const CompressedBuffersDst &cb);
-  void readBlock(const CompressedBuffersSrc &cb);
+  void readBlock(CompressedBuffersSrc &cb);
 
   void flush() { fs_.flush(); };
   auto size() const { return bytes_written; }
@@ -37,8 +38,21 @@ public:
   friend struct ArchiveTester;
 
 private:
-  void writeHeader();
-  void readHeader();
+  void writeArchiveHeader();
+  void readArchiveHeader();
+
+  void writeBytes(const std::vector<std::byte> &);
+  void readBytes(std::vector<std::byte> &);
+
+  template <std::integral T> void writeInteger(const T val) {
+    fs_.write(to_char_ptr(&val), sizeof(T));
+  };
+
+  template <std::integral T> T readInteger() {
+    T ret;
+    fs_.read(to_char_ptr(&ret), sizeof(T));
+    return ret;
+  };
 
 private:
   uint64_t bytes_written = 0;

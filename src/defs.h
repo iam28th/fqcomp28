@@ -5,6 +5,9 @@
 
 namespace fqzcomp28 {
 
+template <typename T>
+concept TriviallyCopyable = std::is_trivially_copyable_v<T>;
+
 using path_t = std::filesystem::path;
 using readlen_t = uint16_t;
 

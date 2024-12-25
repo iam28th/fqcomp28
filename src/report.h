@@ -1,5 +1,6 @@
 #pragma once
 #include <cstddef>
+#include <iosfwd>
 #include <vector>
 
 namespace fqzcomp28 {
@@ -30,4 +31,6 @@ struct CompressedSizes {
 
   std::vector<std::size_t> header_fields;
 };
+
+void printReport(const InputStats &, const CompressedSizes &, std::ostream &);
 } // namespace fqzcomp28

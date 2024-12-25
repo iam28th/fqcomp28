@@ -1,6 +1,6 @@
 #pragma once
+#include "defs.h"
 #include <cstring>
-#include <string_view>
 #include <vector>
 
 namespace fqzcomp28 {
@@ -8,10 +8,8 @@ namespace fqzcomp28 {
 /**
  * @brief appends bytes from val to storage
  */
-template <typename T>
-void storeAsBytes(const T val, std::vector<std::byte> &storage)
-  requires std::is_trivially_copyable_v<T>
-{
+template <TriviallyCopyable T>
+void storeAsBytes(const T val, std::vector<std::byte> &storage) {
   const std::byte *p = reinterpret_cast<const std::byte *>(&val);
   storage.insert(storage.end(), p, p + sizeof(val));
 }
@@ -19,8 +17,7 @@ void storeAsBytes(const T val, std::vector<std::byte> &storage)
 /**
  * @param i - Index in storage at which the object starts
  */
-template <typename T>
-  requires std::is_trivially_copyable_v<T>
+template <TriviallyCopyable T>
 T loadFromBytes(const std::vector<std::byte> &storage, const std::size_t i) {
   T ret;
   std::memcpy(reinterpret_cast<std::byte *>(&ret), storage.data() + i,
@@ -28,16 +25,15 @@ T loadFromBytes(const std::vector<std::byte> &storage, const std::size_t i) {
   return ret;
 }
 
-template <std::random_access_iterator T> auto to_byte_ptr(T it) {
-  return reinterpret_cast<std::byte *>(it);
+template <TriviallyCopyable T> auto to_byte_ptr(const T *p) {
+  return reinterpret_cast<const std::byte *>(p);
 }
 
-template <std::random_access_iterator T>
-auto to_byte_ptr(T it)
-  requires std::is_same_v<T, std::string_view::iterator> ||
-           std::is_same_v<T, const char *>
-{
-  return reinterpret_cast<const std::byte *>(it);
+template <TriviallyCopyable T> auto to_char_ptr(const T *p) {
+  return reinterpret_cast<const char *>(p);
+}
+template <TriviallyCopyable T> auto to_char_ptr(T *p) {
+  return reinterpret_cast<char *>(p);
 }
 
 #if 0
@@ -59,7 +55,7 @@ template <signed_integral T> auto storeDeltaInUnsigned(T prev, T nxt) {
 };
 
 template <signed_integral T_val, unsigned_integral T_udelta>
-auto readDeltaFromUnsigned(T_val prev, T_udelta udelta)
+autoreadDeltaFromUnsigned(T_val prev, T_udelta udelta)
   requires std::is_same_v<T_udelta, std::make_unsigned_t<T_val>>
 {
   T_val nxt = (udelta & 1u) ? -static_cast<T_val>(udelta >> 1u)

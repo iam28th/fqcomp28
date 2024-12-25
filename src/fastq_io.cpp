@@ -16,6 +16,8 @@ FastqReader::FastqReader(std::string mates1, std::string mates2,
 }
 
 bool FastqReader::readNextChunk(FastqChunk &chunk) {
+  chunk.clear();
+
   if (bytes_left1_ == 0)
     return false;
 

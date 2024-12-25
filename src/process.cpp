@@ -46,12 +46,23 @@ void processReads() {
 
   FastqChunk chunk;
   FastqReader reader(mates1, set->reading_chunk_size());
+
+  InputStats istats;
+
   CompressedBuffersDst cbs;
   EncodingContext ctx(&archive.meta());
 
+  unsigned n_blocks = 0;
   while (reader.readNextChunk(chunk)) {
+    ++n_blocks;
+
+    istats.seq = chunk.tot_reads_length;
+    istats.header = chunk.headers_length;
+    istats.n_records += chunk.records.size();
+
     ctx.encodeChunk(chunk, cbs);
-    chunk.clear();
+
+    archive.writeBlock(cbs);
   }
 
 #if 0
