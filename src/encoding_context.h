@@ -41,9 +41,10 @@ public:
 
   /** encodes reads into cbs, allocating memory in cbs as needed */
   void encodeChunk(const FastqChunk &, CompressedBuffersDst &cbs);
-
   /** decodes reads from cbs into chunk; resizes chunk as needed */
   void decodeChunk(FastqChunk &chunk, CompressedBuffersSrc &cbs);
+
+  const CompressedSizes &stats() const { return comp_stats_; }
 
   friend struct EncodingContextTester;
 

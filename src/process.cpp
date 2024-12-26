@@ -55,14 +55,16 @@ void processReads() {
   while (reader.readNextChunk(chunk)) {
     ++n_blocks;
 
-    istats.seq = chunk.tot_reads_length;
-    istats.header = chunk.headers_length;
+    istats.seq += chunk.tot_reads_length;
+    istats.header += chunk.headers_length;
     istats.n_records += chunk.records.size();
 
     ctx.encodeChunk(chunk, cbs);
 
     archive.writeBlock(cbs);
   }
+
+  printReport(istats, ctx.stats(), std::cerr);
 
 #if 0
   FSE_CTable *ct = FSE_createCTable('T', 5);
