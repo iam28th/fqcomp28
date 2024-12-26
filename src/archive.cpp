@@ -33,7 +33,12 @@ void Archive::writeBlock(const CompressedBuffersDst &cb) {
    * followed by compressed size, followed by compressed data */
   writeInteger(cb.original_size.readlens);
   writeBytes(cb.compressed_readlens);
-  // TODO Ns
+
+  writeInteger(cb.original_size.n_count);
+  writeBytes(cb.compressed_n_count);
+
+  writeInteger(cb.original_size.n_pos);
+  writeBytes(cb.compressed_n_pos);
 
   writeBytes(cb.seq);
   writeBytes(cb.qual);
@@ -66,10 +71,17 @@ bool Archive::readBlock(CompressedBuffersSrc &cb) {
   cb.original_size.total = readInteger<uint64_t>();
   if (fs_.eof())
     return false;
+
   cb.original_size.n_records = readInteger<uint64_t>();
 
   cb.original_size.readlens = readInteger<uint64_t>();
   readBytes(cb.compressed_readlens);
+
+  cb.original_size.n_count = readInteger<uint64_t>();
+  readBytes(cb.compressed_n_count);
+
+  cb.original_size.n_pos = readInteger<uint64_t>();
+  readBytes(cb.compressed_n_pos);
 
   readBytes(cb.seq);
   readBytes(cb.qual);

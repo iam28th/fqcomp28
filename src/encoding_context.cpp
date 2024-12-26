@@ -18,6 +18,7 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
                                   CompressedBuffersDst &cbs) {
   prepareBuffersForEncoding(chunk, cbs);
   startNewChunk();
+  comp_stats_.n_blocks++;
 
   assert(prev_header_fields_ == first_header_fields_);
 
@@ -176,9 +177,15 @@ void EncodingContext::prepareBuffersForEncoding(const FastqChunk &chunk,
 }
 
 void EncodingContext::compressMiscBuffers(CompressedBuffersDst &cbs) {
-  // TODO: N counts, N pos...
+  // TODO: use narrow/checked_cast
   cbs.original_size.readlens = static_cast<uint32_t>(cbs.readlens.size());
   comp_stats_.readlens += compressBuffer(cbs.compressed_readlens, cbs.readlens);
+
+  cbs.original_size.n_count = static_cast<uint32_t>(cbs.n_count.size());
+  comp_stats_.n_count += compressBuffer(cbs.compressed_n_count, cbs.n_count);
+
+  cbs.original_size.n_pos = static_cast<uint32_t>(cbs.n_pos.size());
+  comp_stats_.n_pos += compressBuffer(cbs.compressed_n_pos, cbs.n_pos);
 
   for (std::size_t i = 0, E = fmt_.n_fields(); i < E; ++i) {
     const auto &field_data = cbs.header_fields[i];
@@ -210,6 +217,14 @@ void EncodingContext::decompressMiscBuffers(CompressedBuffersSrc &cbs) {
   cbs.readlens.resize(cbs.original_size.readlens);
   memdecompress(cbs.readlens.data(), cbs.compressed_readlens.data(),
                 cbs.compressed_readlens.size());
+
+  cbs.n_count.resize(cbs.original_size.n_count);
+  memdecompress(cbs.n_count.data(), cbs.compressed_n_count.data(),
+                cbs.compressed_n_count.size());
+
+  cbs.n_pos.resize(cbs.original_size.n_pos);
+  memdecompress(cbs.n_pos.data(), cbs.compressed_n_pos.data(),
+                cbs.compressed_n_pos.size());
 
   for (std::size_t i = 0, E = fmt_.n_fields(); i < E; ++i) {
     const auto &field_cdata = cbs.compressed_header_fields[i];

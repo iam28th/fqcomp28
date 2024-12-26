@@ -1,6 +1,5 @@
 #include "report.h"
 #include <cmath>
-#include <iomanip>
 #include <iostream>
 #include <string>
 
@@ -11,38 +10,31 @@ double calc_ratio(std::size_t original, std::size_t compressed) {
   return static_cast<double>(original) / static_cast<double>(compressed);
 }
 
-double bytes2gb(std::size_t bytes) {
-  return calc_ratio(bytes, 1024 * 1024 * 1024);
-}
-
-const std::string sections_separator = "------------\n";
+const std::string sections_separator = "*****************************\n";
 const std::string field_sep = "\t";
 constexpr int column_width = 20;
 const int precision = 3;
 static_assert(precision <= column_width);
 
-void print_string(std::string s, std::ostream &os) {
-  os << std::setw(column_width) << s << field_sep;
-}
+void print_string(std::string s, std::ostream &os) { os << s << field_sep; }
 
-void print_integer(std::size_t x, std::ostream &os,
-                   std::string suf = " bytes") {
-  print_string(std::to_string(x) + suf, os);
+void print_integer(std::size_t x, std::ostream &os) {
+  print_string(std::to_string(x), os);
 }
 
 void print_ratio(std::size_t num, std::size_t denom, std::ostream &os) {
   const double rat = calc_ratio(num, denom);
   std::string s(column_width, 0);
   const std::string fmt = "%." + std::to_string(precision) + "f";
-  auto n = std::sprintf(s.data(), fmt.c_str(), rat);
+  const auto n = std::sprintf(s.data(), fmt.c_str(), rat);
   s.resize(static_cast<std::size_t>(n));
   print_string(s, os);
 };
 
 } // namespace
 
-void printReport(const InputStats &inp, const CompressedSizes &comp,
-                 std::ostream &os, const int precision) {
+void printReport(const InputStats &inp, const CompressedStats &comp,
+                 const DatasetMeta &meta, std::ostream &os) {
 
   os << std::left;
   os << sections_separator;
@@ -58,36 +50,45 @@ void printReport(const InputStats &inp, const CompressedSizes &comp,
 
   os << sections_separator;
   os << "Compressed stream sizes:\n";
-  const std::size_t csize_total = comp.total();
-  auto print_cstream = [&os, precision, csize_total](std::string name,
-                                                     std::size_t bytes) {
+  const std::size_t csize_total =
+      comp.total(meta.n_fields_of_type(headers::FieldType::STRING));
+  auto print_cstream = [&os, csize_total](std::string name, std::size_t bytes) {
     print_string(name, os);
     print_integer(bytes, os);
     print_ratio(bytes, csize_total, os);
     os << '\n';
   };
-  print_cstream("seq", comp.seq);
-  // os << "Compressed
 
-  // TODO
-  //
-  // input sizes
-  // ----
-  // buffer archive fractions
-  // seq
-  // readlen
-  // n_count
-  // n_pos
-  // qual
-  // hf1
-  // hf2
-  // ...
-  // table compression_ratio archive_fraction
-  // seq 20x 0.5
-  // qual ...
-  // headers ...
-  // ---
-  // total CR:
-  // size of compressed file:
+  const std::vector<std::pair<std::string, std::size_t>> cstreams = {
+      {"seq", comp.seq},         {"readlens", comp.readlens},
+      {"n_count", comp.n_count}, {"n_pos", comp.n_pos},
+      {"qual", comp.qual},
+  };
+  for (auto [name, csize] : cstreams)
+    print_cstream(name, csize);
+
+  for (std::size_t i = 0, E = comp.header_fields.size(); i < E; ++i) {
+    std::string name = "header_field_" + std::to_string(i + 1);
+    print_cstream(name, comp.header_fields[i]);
+  }
+  print_cstream("meta", meta.size());
+
+  os << sections_separator;
+  os << "CR" << '\n';
+  auto print_cr = [&os](std::string name, std::size_t ori_size,
+                        std::size_t csize) {
+    print_string(name, os);
+    print_ratio(ori_size, csize, os);
+    os << '\n';
+  };
+  print_cr("Sequence", inp.seq, comp.sequence());
+  print_cr("Quality", inp.seq, comp.quality());
+  print_cr("Headers", inp.header, comp.headers());
+  print_cr("Total", inp.total(), csize_total + meta.size());
+
+  os << sections_separator;
+  print_string("# blocks: ", os);
+  print_integer(comp.n_blocks, os);
+  os << '\n';
 }
 }; // namespace fqzcomp28

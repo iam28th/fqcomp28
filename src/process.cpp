@@ -64,7 +64,7 @@ void processReads() {
     archive.writeBlock(cbs);
   }
 
-  printReport(istats, ctx.stats(), std::cerr);
+  printReport(istats, ctx.stats(), archive.meta(), std::cerr);
 
 #if 0
   FSE_CTable *ct = FSE_createCTable('T', 5);

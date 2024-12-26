@@ -44,7 +44,7 @@ public:
   /** decodes reads from cbs into chunk; resizes chunk as needed */
   void decodeChunk(FastqChunk &chunk, CompressedBuffersSrc &cbs);
 
-  const CompressedSizes &stats() const { return comp_stats_; }
+  const CompressedStats &stats() const { return comp_stats_; }
 
   friend struct EncodingContextTester;
 
@@ -72,7 +72,7 @@ private:
   headers::field_data_t current_field_;
 
   /** accumulates statistics across encoded chunks */
-  CompressedSizes comp_stats_;
+  CompressedStats comp_stats_;
 
   /**
    * reserves enough space in `cbs` to encode `chunk`

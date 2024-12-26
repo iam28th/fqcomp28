@@ -17,7 +17,18 @@ struct cb_original_sizes_t {
   /* number of fastq records in chunk */
   uint64_t n_records;
 
+  uint64_t n_count, n_pos;
+
   bool operator==(const cb_original_sizes_t &) const = default;
+
+  void clear() {
+    total = 0;
+    readlens = 0;
+    n_records = 0;
+    n_count = n_pos = 0;
+    for (auto &sz : header_fields)
+      sz = {};
+  }
 };
 
 template <typename T>
@@ -32,6 +43,12 @@ struct CompressedBuffers {
   std::vector<T> header_fields;
   std::vector<headers::CompressedFieldStorage> compressed_header_fields;
 
+  std::vector<std::byte> n_count;
+  std::vector<std::byte> compressed_n_count;
+
+  std::vector<std::byte> n_pos;
+  std::vector<std::byte> compressed_n_pos;
+
   cb_original_sizes_t original_size;
 
   void clear() {
@@ -45,10 +62,7 @@ struct CompressedBuffers {
     for (auto &chf : compressed_header_fields)
       chf.clear();
 
-    original_size.readlens = 0;
-    original_size.total = 0;
-    for (auto &sz : original_size.header_fields)
-      sz = {};
+    original_size.clear();
   }
 };
 
