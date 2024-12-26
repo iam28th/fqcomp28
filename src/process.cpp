@@ -3,22 +3,13 @@
 #include "compressed_buffers.h"
 #include "defs.h"
 #include "encoding_context.h"
+#include "entropy_sequence.h"
 #include "fastq_io.h"
 #include "fse_compressor.h"
 #include "settings.h"
 #include <vector>
 
-/* headers from zstd library */
-#define FSE_STATIC_LINKING_ONLY
-#include <common/fse.h>
-
 namespace fqzcomp28 {
-
-std::vector<FSE_FUNCTION_TYPE>
-createCTableBuildWksp(const unsigned maxSymbolValue, const unsigned tableLog) {
-  return std::vector<FSE_FUNCTION_TYPE>(
-      FSE_BUILD_CTABLE_WORKSPACE_SIZE(maxSymbolValue, tableLog));
-}
 
 /** fqzcomp28 entry point */
 int startProgram(int argc, char **argv) {
@@ -65,11 +56,6 @@ void processReads() {
   }
 
   printReport(istats, ctx.stats(), archive.meta(), std::cerr);
-
-#if 0
-  FSE_CTable *ct = FSE_createCTable('T', 5);
-  auto tableSymbol = createCTableBuildWksp('T', 5);
-#endif
 }
 
 void processArchiveParts() {

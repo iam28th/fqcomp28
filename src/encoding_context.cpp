@@ -8,7 +8,7 @@
 namespace fqzcomp28 {
 
 EncodingContext::EncodingContext(const DatasetMeta *meta)
-    : meta_(meta), fmt_(meta->header_fmt),
+    : meta_(meta), seq_coder(&(meta->ft_dna)), fmt_(meta->header_fmt),
       first_header_fields_(fromHeader(meta->first_header, fmt_)) {
 
   comp_stats_.header_fields.resize(fmt_.n_fields());
@@ -19,6 +19,8 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
   prepareBuffersForEncoding(chunk, cbs);
   startNewChunk();
   comp_stats_.n_blocks++;
+
+  seq_coder.startChunk(cbs.seq);
 
   assert(prev_header_fields_ == first_header_fields_);
 
@@ -33,6 +35,7 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
     // I want to check the general workflow first,
     // so for now - just copy sequence and qualities
     std::memcpy(dst_seq, to_byte_ptr(r.seqp), r.length);
+
     std::memcpy(dst_qual, to_byte_ptr(r.qualp), r.length);
 
     dst_seq += r.length, dst_qual += r.length;

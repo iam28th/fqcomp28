@@ -4,7 +4,7 @@
 namespace fqzcomp28 {
 
 bool operator==(const DatasetMeta &lhs, const DatasetMeta &rhs) {
-  return lhs.first_header == rhs.first_header;
+  return lhs.first_header == rhs.first_header && lhs.ft_dna == rhs.ft_dna;
 }
 
 void DatasetMeta::storeToStream(const DatasetMeta &meta, std::ostream &os) {
@@ -12,6 +12,9 @@ void DatasetMeta::storeToStream(const DatasetMeta &meta, std::ostream &os) {
   const auto hlen = static_cast<readlen_t>(meta.first_header.size());
   os.write(reinterpret_cast<const char *>(&hlen), sizeof(hlen));
   os.write(meta.first_header.data(), hlen);
+
+  // TODO: use FSE_writeNCount to store tables compactly
+  os.write(reinterpret_cast<const char *>(&(meta.ft_dna)), sizeof(ft_dna));
 }
 
 DatasetMeta DatasetMeta::loadFromStream(std::istream &is) {
@@ -20,7 +23,10 @@ DatasetMeta DatasetMeta::loadFromStream(std::istream &is) {
   std::string first_header(hlen, '!');
   is.read(first_header.data(), hlen);
   assert(is.good());
-  return DatasetMeta(first_header);
+
+  DatasetMeta meta(first_header);
+  is.read(reinterpret_cast<char *>(&(meta.ft_dna)), sizeof(ft_dna));
+  return meta;
 }
 
 DatasetMeta analyzeDataset(path_t fastq_file, std::size_t sample_size_bytes) {

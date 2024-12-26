@@ -5,9 +5,12 @@ add_library(fqzcomp28Core OBJECT
     archive.cpp
     compressed_buffers.cpp
     encoding_context.cpp
-    memcompress.cpp
+    entropy_common.cpp
+    entropy_quality.cpp
+    entropy_sequence.cpp
     fastq_io.cpp
     headers.cpp
+    memcompress.cpp
     prepare.cpp
     process.cpp
     report.cpp
@@ -22,7 +25,7 @@ target_link_libraries(fqzcomp28Core PRIVATE
 )
 
 # mark include folders as 'system', so that the headers don't yield warnings  
-target_include_directories(fqzcomp28Core SYSTEM PRIVATE 
+target_include_directories(fqzcomp28Core SYSTEM PUBLIC 
     $<TARGET_PROPERTY:libzstd_static,INTERFACE_INCLUDE_DIRECTORIES>
 )
 

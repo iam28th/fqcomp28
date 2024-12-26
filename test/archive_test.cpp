@@ -11,20 +11,6 @@ bool compressedPartEqual(const CompressedBuffersDst &dst,
          dst.compressed_readlens == src.compressed_readlens &&
          dst.compressed_header_fields == src.compressed_header_fields;
 }
-#if 0
-struct CompressedBuffers {
-  CompressedBuffers() = default;
-  std::vector<std::byte> seq, qual;
-
-  std::vector<std::byte> readlens;
-  std::vector<std::byte> compressed_readlens;
-
-  std::vector<T> header_fields;
-  std::vector<headers::CompressedFieldStorage> compressed_header_fields;
-
-  cb_original_sizes_t original_size;
-#endif
-
 struct ArchiveTester {
   static void createArchive() {
     const path_t input = "test/data/SRR065390_sub_1.fastq";

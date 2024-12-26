@@ -17,8 +17,7 @@ class EncodingContext {
   /** we assume that it's at least as good as bit-packing */
   static std::size_t compressBoundSequence(std::size_t original_size) {
     return original_size;
-    // TODO: once we have fse in place...
-    return original_size / 4 + extra_cbuffer_size;
+    // return original_size / 4 + extra_cbuffer_size;
   }
 
   static std::size_t compressBoundQuality(std::size_t original_size) {
@@ -63,6 +62,7 @@ private:
   void startNewChunk();
 
   const DatasetMeta *const meta_;
+  SequenceCoder seq_coder;
 
   const headers::HeaderFormatSpeciciation fmt_;
 
