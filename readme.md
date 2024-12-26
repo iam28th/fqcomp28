@@ -7,9 +7,9 @@ git clone git@github.com:iam28th/fqzcomp28.git
 cd fqzcomp28
 cmake -S . -B build
 cmake --build build
+
+./fqzcomp28 -h
 ```
-after that the executable is `./build/bin/fqzcomp28`
-TODO: copy/move executable to project root in CMake
 
 // TODO invistigate compatable gcc/clang
 
@@ -25,3 +25,4 @@ TODO: copy/move executable to project root in CMake
     - must all have same structure
     - "fields" (that is, substrings between two non-alphanumeric characters) must be no more than 255 characters long
     - the last character in a header must be alphanumeric
+- current implementation is single-threaded
