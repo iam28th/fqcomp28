@@ -6,7 +6,6 @@
 #include "fastq_io.h"
 #include "fse_compressor.h"
 #include "settings.h"
-#include <iostream>
 #include <vector>
 
 /* headers from zstd library */
@@ -52,7 +51,7 @@ void processReads() {
   CompressedBuffersDst cbs;
   EncodingContext ctx(&archive.meta());
 
-  unsigned n_blocks = 0;
+  [[maybe_unused]] unsigned n_blocks = 0;
   while (reader.readNextChunk(chunk)) {
     ++n_blocks;
 
@@ -72,6 +71,17 @@ void processReads() {
 }
 
 void processArchiveParts() {
-  std::cout << "hehe I'm decompressing" << std::endl;
+  const auto set = Settings::getInstance();
+  Archive archive(set->non_storable.archive);
+  FastqWriter writer(set->non_storable.mates1);
+
+  CompressedBuffersSrc cbs;
+  FastqChunk chunk;
+  EncodingContext ctx(&archive.meta());
+
+  while (archive.readBlock(cbs)) {
+    ctx.decodeChunk(chunk, cbs);
+    writer.writeChunk(chunk);
+  }
 }
 } // namespace fqzcomp28

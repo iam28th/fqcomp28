@@ -67,7 +67,11 @@ public:
   /** helper struct to load original sizes into during decompression */
   struct sizes {
     uint64_t isDifferentFlag, content, contentLength;
+
+    bool operator==(const sizes &) const = default;
   };
+
+  bool operator==(const FieldStorage &) const = default;
 
   virtual ~FieldStorage() = default;
 

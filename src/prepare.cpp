@@ -19,6 +19,7 @@ DatasetMeta DatasetMeta::loadFromStream(std::istream &is) {
   is.read(reinterpret_cast<char *>(&hlen), sizeof(hlen));
   std::string first_header(hlen, '!');
   is.read(first_header.data(), hlen);
+  assert(is.good());
   return DatasetMeta(first_header);
 }
 

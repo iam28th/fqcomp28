@@ -8,8 +8,7 @@
 namespace fqzcomp28 {
 
 EncodingContext::EncodingContext(const DatasetMeta *meta)
-    : meta_(meta),
-      fmt_(headers::HeaderFormatSpeciciation::fromHeader(meta->first_header)),
+    : meta_(meta), fmt_(meta->header_fmt),
       first_header_fields_(fromHeader(meta->first_header, fmt_)) {
 
   comp_stats_.header_fields.resize(fmt_.n_fields());
@@ -77,6 +76,9 @@ void EncodingContext::decodeChunk(FastqChunk &chunk,
     r.length = loadFromBytes<readlen_t>(cbs.readlens, 2 * i);
     std::memcpy(dst, src_seq, r.length);
     dst += r.length;
+    *dst++ = '\n';
+
+    *dst++ = '+';
     *dst++ = '\n';
 
     r.qualp = dst;
@@ -179,9 +181,9 @@ void EncodingContext::compressMiscBuffers(CompressedBuffersDst &cbs) {
   comp_stats_.readlens += compressBuffer(cbs.compressed_readlens, cbs.readlens);
 
   for (std::size_t i = 0, E = fmt_.n_fields(); i < E; ++i) {
-    auto &field_csize = comp_stats_.header_fields[i];
-    auto &field_data = cbs.header_fields[i];
+    const auto &field_data = cbs.header_fields[i];
     auto &field_cdata = cbs.compressed_header_fields[i];
+    auto &field_csize = comp_stats_.header_fields[i];
 
     auto &original_size = cbs.original_size.header_fields[i];
 
@@ -210,10 +212,10 @@ void EncodingContext::decompressMiscBuffers(CompressedBuffersSrc &cbs) {
                 cbs.compressed_readlens.size());
 
   for (std::size_t i = 0, E = fmt_.n_fields(); i < E; ++i) {
+    const auto &field_cdata = cbs.compressed_header_fields[i];
+    const auto &original_size = cbs.original_size.header_fields[i];
     auto &field_data = cbs.header_fields[i];
-    auto &field_cdata = cbs.compressed_header_fields[i];
 
-    auto &original_size = cbs.original_size.header_fields[i];
     if (fmt_.field_types[i] == headers::FieldType::STRING) {
       field_data.isDifferentFlag.resize(original_size.isDifferentFlag);
       field_data.content.resize(original_size.content);

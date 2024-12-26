@@ -28,7 +28,7 @@ public:
               Settings::getDefaultsInstance()->sample_chunk_size());
 
   void writeBlock(const CompressedBuffersDst &cb);
-  void readBlock(CompressedBuffersSrc &cb);
+  bool readBlock(CompressedBuffersSrc &cb);
 
   void flush() { fs_.flush(); };
   auto size() const { return bytes_written; }

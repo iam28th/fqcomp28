@@ -16,6 +16,8 @@ struct cb_original_sizes_t {
   uint64_t readlens;
   /* number of fastq records in chunk */
   uint64_t n_records;
+
+  bool operator==(const cb_original_sizes_t &) const = default;
 };
 
 template <typename T>

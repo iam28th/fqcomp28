@@ -5,6 +5,8 @@
 
 namespace fqzcomp28 {
 
+static_assert(std::is_same_v<uint64_t, std::size_t>);
+
 template <typename T>
 concept TriviallyCopyable = std::is_trivially_copyable_v<T>;
 

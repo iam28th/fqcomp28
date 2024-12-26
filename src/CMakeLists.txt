@@ -48,3 +48,8 @@ endif()
 
 add_executable(fqzcomp28 entry_point.cpp)
 target_link_libraries(fqzcomp28 PRIVATE fqzcomp28Core)
+
+# copy (move?) executable to 
+add_custom_command(TARGET fqzcomp28 
+                   POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:fqzcomp28> PROJECT_SOURCE_DIR)
