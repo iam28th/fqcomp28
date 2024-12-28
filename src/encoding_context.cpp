@@ -24,8 +24,8 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
 
   assert(prev_header_fields_ == first_header_fields_);
 
-  std::byte *dst_seq = cbs.seq.data();
   std::byte *dst_qual = cbs.qual.data();
+  std::byte *dst_seq = cbs.seq.data();
 
   for (const FastqRecord &r : chunk.records) {
     encodeHeader(r.header(), cbs);
@@ -34,15 +34,17 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
 
     // I want to check the general workflow first,
     // so for now - just copy sequence and qualities
-    std::memcpy(dst_seq, to_byte_ptr(r.seqp), r.length);
+    // seq_coder.encodeRecord(r);
 
     std::memcpy(dst_qual, to_byte_ptr(r.qualp), r.length);
+    std::memcpy(dst_seq, to_byte_ptr(r.seqp), r.length);
 
-    dst_seq += r.length, dst_qual += r.length;
+    dst_qual += r.length, dst_seq += r.length;
   }
 
+  // const std::size_t compressed_size_seq = seq_coder.endChunk();
   const std::size_t compressed_size_seq =
-      static_cast<std::size_t>(dst_seq - cbs.seq.data());
+      static_cast<std::size_t>(dst_qual - cbs.qual.data());
   const std::size_t compressed_size_qual =
       static_cast<std::size_t>(dst_qual - cbs.qual.data());
 
@@ -50,7 +52,7 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
   cbs.qual.resize(compressed_size_qual);
   /* other fields are updated in compress misc buffers */
   comp_stats_.seq += compressed_size_seq;
-  comp_stats_.qual += compressed_size_seq;
+  comp_stats_.qual += compressed_size_qual;
 
   cbs.original_size.n_records = chunk.records.size();
   cbs.original_size.total = chunk.raw_data.size();

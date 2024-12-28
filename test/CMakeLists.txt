@@ -9,11 +9,12 @@ FetchContent_MakeAvailable(Catch2)
 
 
 add_executable(unit_tests
-    test_utils.cpp
     archive_test.cpp
-    fastq_io_test.cpp
-    headers_test.cpp
     encoding_context_test.cpp
+    fastq_io_test.cpp
+    fse_sequence_test.cpp
+    headers_test.cpp
+    test_utils.cpp
 )
 
 target_link_libraries(unit_tests PRIVATE

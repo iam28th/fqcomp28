@@ -25,7 +25,7 @@ struct FastqRecord {
   // TODO: make parsing a static method of FastqRecord?
   // then fields can be made private...
 public:
-  const char *seqp, *qualp, *headerp;
+  char *seqp, *qualp, *headerp;
   readlen_t length, header_length;
 
   auto header() const { return std::string_view(headerp, header_length); }

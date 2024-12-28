@@ -3,9 +3,7 @@
 #include "compressed_buffers.h"
 #include "defs.h"
 #include "encoding_context.h"
-#include "entropy_sequence.h"
 #include "fastq_io.h"
-#include "fse_compressor.h"
 #include "settings.h"
 #include <vector>
 

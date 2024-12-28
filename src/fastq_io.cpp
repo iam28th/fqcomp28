@@ -59,7 +59,7 @@ std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
 
   FastqRecord rec;
   int ln = 0;
-  const char *line_start = chunk.raw_data.data();
+  char *line_start = chunk.raw_data.data();
   assert(*line_start == '@'); /* as it should be fastq header */
 
   for (;;) {
@@ -70,7 +70,7 @@ std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
                       : static_cast<std::size_t>(rec.headerp - beg));
     }
 
-    const char *line_end = static_cast<const char *>(
+    char *line_end = static_cast<char *>(
         std::memchr(line_start, '\n', size - bytes_processed));
 
     if (line_end == nullptr) {

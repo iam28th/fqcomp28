@@ -14,10 +14,13 @@ class EncodingContext {
    */
   static constexpr std::size_t extra_cbuffer_size = 1024;
 
-  /** we assume that it's at least as good as bit-packing */
+public:
+  /**
+   * TODO we can assume that it's at least as good as bit-packing (not always
+   * true on small files, but generally should be...
+   */
   static std::size_t compressBoundSequence(std::size_t original_size) {
-    return original_size;
-    // return original_size / 4 + extra_cbuffer_size;
+    return FSE_BLOCKBOUND(original_size);
   }
 
   static std::size_t compressBoundQuality(std::size_t original_size) {
@@ -27,6 +30,7 @@ class EncodingContext {
     return original_size / 8 * 7 + extra_cbuffer_size;
   }
 
+private:
   /** reserves enough space in `chunk` to decode `cbs` */
   static void prepareFastqChunk(FastqChunk &chunk,
                                 const CompressedBuffersSrc &cbs) {
@@ -62,7 +66,7 @@ private:
   void startNewChunk();
 
   const DatasetMeta *const meta_;
-  SequenceCoder seq_coder;
+  SequenceEncoder seq_coder;
 
   const headers::HeaderFormatSpeciciation fmt_;
 
