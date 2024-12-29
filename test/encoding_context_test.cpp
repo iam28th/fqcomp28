@@ -43,7 +43,7 @@ struct EncodingContextTester {
 
   static void encodeChunk() {
     // TODO probably can repeat this code only once somehow
-    const path_t input = "test/data/SRR065390_sub_1.fastq";
+    const path_t input = "test/data/without_ns.fastq";
     const FastqChunk chunk_in = loadFastqFileContents(input);
     const DatasetMeta meta(chunk_in);
 

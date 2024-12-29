@@ -15,12 +15,14 @@ class EncodingContext {
   static constexpr std::size_t extra_cbuffer_size = 1024;
 
 public:
-  /**
-   * TODO we can assume that it's at least as good as bit-packing (not always
-   * true on small files, but generally should be...
-   */
   static std::size_t compressBoundSequence(std::size_t original_size) {
-    return FSE_BLOCKBOUND(original_size);
+    /* we can normally assume that the compression at least as good as
+     * bit-packing
+     * ...but also for very small inputs (e.g., 1 base) compressed size
+     * is much larger than original size so I'm using a heuristic... */
+    if (original_size < extra_cbuffer_size)
+      return extra_cbuffer_size * FSE_Sequence::N_MODELS;
+    return original_size / 4 + extra_cbuffer_size;
   }
 
   static std::size_t compressBoundQuality(std::size_t original_size) {
@@ -66,7 +68,8 @@ private:
   void startNewChunk();
 
   const DatasetMeta *const meta_;
-  SequenceEncoder seq_coder;
+  SequenceEncoder seq_encoder;
+  SequenceDecoder seq_decoder;
 
   const headers::HeaderFormatSpeciciation fmt_;
 

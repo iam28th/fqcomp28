@@ -8,7 +8,8 @@
 namespace fqzcomp28 {
 
 EncodingContext::EncodingContext(const DatasetMeta *meta)
-    : meta_(meta), seq_coder(&(meta->ft_dna)), fmt_(meta->header_fmt),
+    : meta_(meta), seq_encoder(&(meta->ft_dna)), seq_decoder(&(meta->ft_dna)),
+      fmt_(meta->header_fmt),
       first_header_fields_(fromHeader(meta->first_header, fmt_)) {
 
   comp_stats_.header_fields.resize(fmt_.n_fields());
@@ -20,31 +21,26 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
   startNewChunk();
   comp_stats_.n_blocks++;
 
-  seq_coder.startChunk(cbs.seq);
+  seq_encoder.startChunk(cbs.seq);
 
   assert(prev_header_fields_ == first_header_fields_);
 
   std::byte *dst_qual = cbs.qual.data();
-  std::byte *dst_seq = cbs.seq.data();
 
   for (const FastqRecord &r : chunk.records) {
     encodeHeader(r.header(), cbs);
 
     storeAsBytes(r.length, cbs.readlens);
 
-    // I want to check the general workflow first,
-    // so for now - just copy sequence and qualities
-    // seq_coder.encodeRecord(r);
-
+    // for now - just copy qualities
     std::memcpy(dst_qual, to_byte_ptr(r.qualp), r.length);
-    std::memcpy(dst_seq, to_byte_ptr(r.seqp), r.length);
+    dst_qual += r.length;
 
-    dst_qual += r.length, dst_seq += r.length;
+    seq_encoder.encodeRecord(r);
   }
 
   // const std::size_t compressed_size_seq = seq_coder.endChunk();
-  const std::size_t compressed_size_seq =
-      static_cast<std::size_t>(dst_qual - cbs.qual.data());
+  const std::size_t compressed_size_seq = seq_encoder.endChunk();
   const std::size_t compressed_size_qual =
       static_cast<std::size_t>(dst_qual - cbs.qual.data());
 
@@ -66,11 +62,14 @@ void EncodingContext::decodeChunk(FastqChunk &chunk,
 
   decompressMiscBuffers(cbs);
 
+  seq_decoder.startChunk(cbs.seq);
+
   char *dst = chunk.raw_data.data();
-  const std::byte *src_seq = cbs.seq.data();
   const std::byte *src_qual = cbs.qual.data();
 
-  // TODO: might skip assigning record fields as not necessary
+  /* decompression is done in two passes:
+   * the first one sets record pointers and decompresses headers,
+   * the second decompresses sequence and quality into pointers */
   for (std::size_t i = 0, E = cbs.original_size.n_records; i < E; ++i) {
     auto &r = chunk.records[i];
     r.headerp = dst;
@@ -80,7 +79,6 @@ void EncodingContext::decodeChunk(FastqChunk &chunk,
 
     r.seqp = dst;
     r.length = loadFromBytes<readlen_t>(cbs.readlens, 2 * i);
-    std::memcpy(dst, src_seq, r.length);
     dst += r.length;
     *dst++ = '\n';
 
@@ -92,8 +90,12 @@ void EncodingContext::decodeChunk(FastqChunk &chunk,
     dst += r.length;
     *dst++ = '\n';
 
-    src_seq += r.length;
     src_qual += r.length;
+  }
+
+  for (std::size_t i = cbs.original_size.n_records; i > 0; --i) {
+    seq_decoder.decodeRecord(chunk.records[i - 1]);
+    // TODO: decode quality
   }
 }
 

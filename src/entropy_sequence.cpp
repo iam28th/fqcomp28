@@ -71,45 +71,58 @@ void SequenceDecoder::endChunk() const {
 }
 
 void SequenceEncoder::encodeRecord(const FastqRecord &r) {
-  if (CONTEXT_SIZE + 1 > r.length) [[unlikely]] // TODO
-    throw std::runtime_error("too short reads not support (yet)");
 
-  unsigned ctx = INITIAL_CONTEXT;
+  unsigned ctx = INITIAL_CONTEXT & CTX_MASK;
 
   /* form context of the last base; add CONTEXT_SIZE - 1 symbols
    * (the closest symbol is in the upper 2 bits of the context) */
-  for (char *base = r.seqp + r.length - 2,
-            *E = std::max(base - (CONTEXT_SIZE - 1), r.seqp - 1);
-       base > E; --base) {
-    ctx = (ctx << 2) + base2bits(*base);
-  }
+  const int to_add_from_sequence = std::min(CONTEXT_SIZE - 1, r.length - 1);
+  const char *base = r.seqp + r.length - 2;
 
-  for (const char *base = r.seqp + r.length - 1, *E = r.seqp + CONTEXT_SIZE - 1;
-       base > E; --base) {
-    ctx = ((ctx << 2) + base2bits(*(base - CONTEXT_SIZE))) & CTX_MASK;
+  for (int i = 0; i < to_add_from_sequence; ++i)
+    ctx = addBaseLower(ctx, *base--);
 
-    /* the closest symbol is in the upper 2 bits of the context */
-    assert(bits2base(ctx >> 2 * (CONTEXT_SIZE - 1)) == *(base - 1));
+  /* points to the first base that has less than
+   * CONTEXT_SIZE bases to its left */
+  const char *first_base_with_partial_ctx = r.length > CONTEXT_SIZE
+                                                ? r.seqp + CONTEXT_SIZE - 1
+                                                : r.seqp + r.length - 1;
+  assert(*(r.seqp - 1) == '\n'); /* it's safe to use this address becuase it's
+                                    in a block of fastq data */
+
+  /* encode the part which has all context formed by r */
+  for (base = r.seqp + r.length - 1; base > first_base_with_partial_ctx;
+       --base) {
+
+    /* this loop isn't entered if r.length <= CONTEXT_SIZE */
+    assert(r.length > CONTEXT_SIZE);
+
+    /* update ctx with the furtherest symbol;
+     * the closest symbol is in the upper 2 bits of the context */
+    ctx = addBaseLower(ctx, *(base - CONTEXT_SIZE));
+    assert(getClosestBase(ctx) == *(base - 1));
 
     const unsigned sym = base2bits(*base);
     FSE_encodeSymbol(&bitStream_, states_.begin() + ctx, sym);
     BIT_flushBitsFast(&bitStream_); // TODO only flush on every K-th iteration?
   }
 
-  /* when encoding beginning of the sequence, ctx is updated with
-   * bytes from INITIAL_CONTEXT */
-  for (int i = 0,
-           E = std::min(CONTEXT_SIZE - 1, static_cast<int>(r.length - 1));
-       i <= E; ++i) {
-    ctx = ((ctx << 2) +
-           *(reinterpret_cast<const unsigned char *>(&INITIAL_CONTEXT) + i)) &
-          CTX_MASK;
+  const int to_add_from_initial = (CONTEXT_SIZE - 1) - to_add_from_sequence;
+  int i;
+  for (i = 0; i < to_add_from_initial; ++i) {
+    /* this loop isn't entered if r.length > CONTEXT_SIZE */
+    assert(r.length <= CONTEXT_SIZE);
+    ctx = addBaseLower(ctx, INITIAL_CONTEXT_SEQ_REV[i]);
+  }
 
-    if (i == E) {
+  for (base = first_base_with_partial_ctx; base >= r.seqp; --base, ++i) {
+
+    ctx = addBaseLower(ctx, INITIAL_CONTEXT_SEQ_REV[i]);
+
+    if (base == r.seqp)
       assert(ctx == INITIAL_CONTEXT);
-    }
 
-    const unsigned sym = base2bits(*(r.seqp + (CONTEXT_SIZE - i - 1)));
+    const unsigned sym = base2bits(*base);
     FSE_encodeSymbol(&bitStream_, states_.begin() + ctx, sym);
     BIT_flushBitsFast(&bitStream_);
   }
@@ -122,7 +135,7 @@ void SequenceDecoder::decodeRecord(FastqRecord &r) {
     BIT_reloadDStream(&bitStream_);
 
     *out = bits2base(sym);
-    ctx = (ctx >> 2) + (sym << (2 * (CONTEXT_SIZE - 1)));
+    ctx = addSymUpper(ctx, sym);
   }
 }
 
@@ -144,7 +157,7 @@ FSE_Sequence::calculateFreqTable(const FastqChunk &chunk) {
       const unsigned symbol = base2bits(c);
       counts[ctx][symbol]++;
 
-      ctx = (ctx >> 2) + (symbol << (2 * (CONTEXT_SIZE - 1)));
+      ctx = addSymUpper(ctx, symbol);
     }
   }
   /* normalize frequencies */
@@ -164,5 +177,4 @@ FSE_Sequence::calculateFreqTable(const FastqChunk &chunk) {
   return ft;
 }
 
-void encodeRecord(const FastqRecord &r);
 } // namespace fqzcomp28
