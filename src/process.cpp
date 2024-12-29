@@ -2,9 +2,9 @@
 #include "archive.h"
 #include "compressed_buffers.h"
 #include "defs.h"
-#include "encoding_context.h"
 #include "fastq_io.h"
 #include "settings.h"
+#include "workspace.h"
 #include <vector>
 
 namespace fqzcomp28 {
@@ -38,7 +38,7 @@ void processReads() {
   InputStats istats;
 
   CompressedBuffersDst cbs;
-  EncodingContext ctx(&archive.meta());
+  CompressionWorkspace wksp(&archive.meta());
 
   [[maybe_unused]] unsigned n_blocks = 0;
   while (reader.readNextChunk(chunk)) {
@@ -48,12 +48,12 @@ void processReads() {
     istats.header += chunk.headers_length;
     istats.n_records += chunk.records.size();
 
-    ctx.encodeChunk(chunk, cbs);
+    wksp.encodeChunk(chunk, cbs);
 
     archive.writeBlock(cbs);
   }
 
-  printReport(istats, ctx.stats(), archive.meta(), std::cerr);
+  printReport(istats, wksp.stats(), archive.meta(), std::cerr);
 }
 
 void processArchiveParts() {
@@ -63,10 +63,10 @@ void processArchiveParts() {
 
   CompressedBuffersSrc cbs;
   FastqChunk chunk;
-  EncodingContext ctx(&archive.meta());
+  DecompressionWorkspace wksp(&archive.meta());
 
   while (archive.readBlock(cbs)) {
-    ctx.decodeChunk(chunk, cbs);
+    wksp.decodeChunk(chunk, cbs);
     writer.writeChunk(chunk);
   }
 }

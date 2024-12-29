@@ -1,6 +1,6 @@
 #include "archive.h"
-#include "encoding_context.h"
 #include "fastq_io.h"
+#include "workspace.h"
 #include <catch2/catch_test_macros.hpp>
 
 namespace fqzcomp28 {
@@ -31,8 +31,6 @@ struct ArchiveTester {
   /**
    * create archive, write block of data, read it; and check that compressed
    * contents are the same
-   * TODO move to "test_process" since it's (or will be) kind of entire program
-   * run ?
    */
   static void writeBlock() {
     const path_t input = "test/data/without_ns.fastq";
@@ -50,13 +48,14 @@ struct ArchiveTester {
       CompressedBuffersDst cbs_dst;
       CompressedBuffersSrc cbs_src;
 
-      EncodingContext ctx(&archive_out.meta());
+      CompressionWorkspace cwksp(&archive_out.meta());
+      DecompressionWorkspace dwksp(&archive_out.meta());
 
       [[maybe_unused]] unsigned n_chunks = 0;
       while (reader.readNextChunk(chunk_in)) {
         ++n_chunks;
 
-        ctx.encodeChunk(chunk_in, cbs_dst);
+        cwksp.encodeChunk(chunk_in, cbs_dst);
 
         archive_out.writeBlock(cbs_dst);
         archive_out.flush();
@@ -66,7 +65,7 @@ struct ArchiveTester {
         // TODO: another check after "decompressedMiscBuffers" ?
         CHECK(compressedPartEqual(cbs_dst, cbs_src));
 
-        ctx.decodeChunk(chunk_out, cbs_src);
+        dwksp.decodeChunk(chunk_out, cbs_src);
       }
 
       const bool ret = archive_in.readBlock(cbs_src);

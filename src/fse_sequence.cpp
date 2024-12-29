@@ -1,4 +1,4 @@
-#include "entropy_sequence.h"
+#include "fse_sequence.h"
 #include "sequtils.h"
 #include <numeric>
 

@@ -1,6 +1,6 @@
 #pragma once
 #include "defs.h"
-#include "entropy_sequence.h"
+#include "fse_sequence.h"
 #include "headers.h"
 #include <algorithm>
 

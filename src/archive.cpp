@@ -1,4 +1,5 @@
 #include "archive.h"
+#include "utils.h"
 
 namespace fqzcomp28 {
 

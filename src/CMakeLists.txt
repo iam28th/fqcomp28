@@ -4,16 +4,16 @@ add_library(fqzcomp28Core OBJECT
     app.cpp
     archive.cpp
     compressed_buffers.cpp
-    encoding_context.cpp
     entropy_common.cpp
     entropy_quality.cpp
-    entropy_sequence.cpp
     fastq_io.cpp
+    fse_sequence.cpp
     headers.cpp
     memcompress.cpp
     prepare.cpp
     process.cpp
     report.cpp
+    workspace.cpp
 )
 
 target_include_directories(fqzcomp28Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

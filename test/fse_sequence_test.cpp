@@ -1,7 +1,7 @@
 #include "defs.h"
-#include "encoding_context.h"
-#include "entropy_sequence.h"
+#include "fse_sequence.h"
 #include "test_utils.h"
+#include "workspace.h"
 #include <catch2/catch_test_macros.hpp>
 #include <ranges>
 
@@ -16,19 +16,20 @@ std::vector<char> getConcatenatedSequences(const FastqChunk &chunk) {
 
 TEST_CASE("Sequence encoding (without Ns)") {
   const path_t inp_path = "test/data/without_ns.fastq";
+
   FastqChunk chunk = loadFastqFileContents(inp_path);
   FSE_Sequence::FreqTable ft = FSE_Sequence::calculateFreqTable(chunk);
 
   const std::vector<char> sequences = getConcatenatedSequences(chunk);
-
   const std::size_t input_size = chunk.tot_reads_length;
   assert(input_size == sequences.size());
 
   std::vector<std::byte> output_buf;
-  output_buf.resize(EncodingContext::compressBoundSequence(input_size));
+  output_buf.resize(Workspace::compressBoundSequence(input_size));
 
   SequenceEncoder encoder(&ft);
   SequenceDecoder decoder(&ft);
+
   encoder.startChunk(output_buf);
   for (const auto &r : chunk.records)
     encoder.encodeRecord(r);

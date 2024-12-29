@@ -1,4 +1,4 @@
-#include "encoding_context.h"
+#include "workspace.h"
 #include "headers.h"
 #include "memcompress.h"
 #include "utils.h"
@@ -7,16 +7,12 @@
 
 namespace fqzcomp28 {
 
-EncodingContext::EncodingContext(const DatasetMeta *meta)
-    : meta_(meta), seq_encoder(&(meta->ft_dna)), seq_decoder(&(meta->ft_dna)),
-      fmt_(meta->header_fmt),
-      first_header_fields_(fromHeader(meta->first_header, fmt_)) {
+Workspace::Workspace(const DatasetMeta *meta)
+    : meta_(meta), fmt_(meta->header_fmt),
+      first_header_fields_(fromHeader(meta->first_header, fmt_)) {}
 
-  comp_stats_.header_fields.resize(fmt_.n_fields());
-}
-
-void EncodingContext::encodeChunk(const FastqChunk &chunk,
-                                  CompressedBuffersDst &cbs) {
+void CompressionWorkspace::encodeChunk(const FastqChunk &chunk,
+                                       CompressedBuffersDst &cbs) {
   prepareBuffersForEncoding(chunk, cbs);
   startNewChunk();
   comp_stats_.n_blocks++;
@@ -55,8 +51,8 @@ void EncodingContext::encodeChunk(const FastqChunk &chunk,
   compressMiscBuffers(cbs);
 }
 
-void EncodingContext::decodeChunk(FastqChunk &chunk,
-                                  CompressedBuffersSrc &cbs) {
+void DecompressionWorkspace::decodeChunk(FastqChunk &chunk,
+                                         CompressedBuffersSrc &cbs) {
   prepareFastqChunk(chunk, cbs);
   startNewChunk();
 
@@ -99,13 +95,13 @@ void EncodingContext::decodeChunk(FastqChunk &chunk,
   }
 }
 
-void EncodingContext::startNewChunk() {
+void Workspace::startNewChunk() {
   prev_header_fields_.assign(first_header_fields_.begin(),
                              first_header_fields_.end());
 }
 
-void EncodingContext::encodeHeader(const std::string_view header,
-                                   CompressedBuffersDst &cbs) {
+void CompressionWorkspace::encodeHeader(const std::string_view header,
+                                        CompressedBuffersDst &cbs) {
   auto field_start = header.begin() + 1; /* skip '@' */
   for (std::size_t i = 0, E = fmt_.n_fields() - 1; i < E; ++i) {
     const auto field_end =
@@ -136,7 +132,8 @@ void EncodingContext::encodeHeader(const std::string_view header,
   }
 }
 
-unsigned EncodingContext::decodeHeader(char *dst, CompressedBuffersSrc &cbs) {
+unsigned DecompressionWorkspace::decodeHeader(char *dst,
+                                              CompressedBuffersSrc &cbs) {
   char *const old_dst = dst;
   *dst++ = '@';
 
@@ -167,8 +164,8 @@ unsigned EncodingContext::decodeHeader(char *dst, CompressedBuffersSrc &cbs) {
   return static_cast<unsigned>(dst - old_dst);
 }
 
-void EncodingContext::prepareBuffersForEncoding(const FastqChunk &chunk,
-                                                CompressedBuffersDst &cbs) {
+void CompressionWorkspace::prepareBuffersForEncoding(
+    const FastqChunk &chunk, CompressedBuffersDst &cbs) {
   cbs.clear();
 
   // TODO: estimate compressed sizes for all buffers during
@@ -183,7 +180,7 @@ void EncodingContext::prepareBuffersForEncoding(const FastqChunk &chunk,
     field.clear();
 }
 
-void EncodingContext::compressMiscBuffers(CompressedBuffersDst &cbs) {
+void CompressionWorkspace::compressMiscBuffers(CompressedBuffersDst &cbs) {
   // TODO: use narrow/checked_cast
   cbs.original_size.readlens = static_cast<uint32_t>(cbs.readlens.size());
   comp_stats_.readlens += compressBuffer(cbs.compressed_readlens, cbs.readlens);
@@ -220,7 +217,7 @@ void EncodingContext::compressMiscBuffers(CompressedBuffersDst &cbs) {
   }
 }
 
-void EncodingContext::decompressMiscBuffers(CompressedBuffersSrc &cbs) {
+void DecompressionWorkspace::decompressMiscBuffers(CompressedBuffersSrc &cbs) {
   cbs.readlens.resize(cbs.original_size.readlens);
   memdecompress(cbs.readlens.data(), cbs.compressed_readlens.data(),
                 cbs.compressed_readlens.size());
@@ -259,15 +256,16 @@ void EncodingContext::decompressMiscBuffers(CompressedBuffersSrc &cbs) {
   }
 }
 
-std::size_t EncodingContext::compressBuffer(std::vector<std::byte> &dst,
-                                            const std::vector<std::byte> &src) {
+std::size_t
+CompressionWorkspace::compressBuffer(std::vector<std::byte> &dst,
+                                     const std::vector<std::byte> &src) {
   dst.resize(src.size() + extra_cbuffer_size);
   const std::size_t csize = memcompress(dst.data(), src.data(), src.size());
   dst.resize(csize);
   return csize;
 }
 
-void EncodingContext::updateStats(const CompressedBuffersDst &cbs) {
+void CompressionWorkspace::updateStats(const CompressedBuffersDst &cbs) {
   /* update stats */
   // TODO: also account for readlens and ns for sequences...
   comp_stats_.seq += cbs.seq.size();
