@@ -50,12 +50,14 @@ void printReport(const InputStats &inp, const CompressedStats &comp,
 
   os << sections_separator;
   os << "Compressed stream sizes:\n";
-  const std::size_t csize_total =
-      comp.total(meta.n_fields_of_type(headers::FieldType::STRING));
-  auto print_cstream = [&os, csize_total](std::string name, std::size_t bytes) {
+  const std::size_t archive_size =
+      comp.total(meta.n_fields_of_type(headers::FieldType::STRING)) +
+      meta.size();
+  auto print_cstream = [&os, archive_size](std::string name,
+                                           std::size_t bytes) {
     print_string(name, os);
     print_integer(bytes, os);
-    print_ratio(bytes, csize_total, os);
+    print_ratio(bytes, archive_size, os);
     os << '\n';
   };
 
@@ -71,7 +73,8 @@ void printReport(const InputStats &inp, const CompressedStats &comp,
     std::string name = "header_field_" + std::to_string(i + 1);
     print_cstream(name, comp.header_fields[i]);
   }
-  print_cstream("meta", meta.size());
+  print_cstream("meta_seq", meta.sequence());
+  print_cstream("meta_qual", meta.quality());
 
   os << sections_separator;
   os << "CR" << '\n';
@@ -81,10 +84,10 @@ void printReport(const InputStats &inp, const CompressedStats &comp,
     print_ratio(ori_size, csize, os);
     os << '\n';
   };
-  print_cr("Sequence", inp.seq, comp.sequence());
-  print_cr("Quality", inp.seq, comp.quality());
-  print_cr("Headers", inp.header, comp.headers());
-  print_cr("Total", inp.total(), csize_total + meta.size());
+  print_cr("Sequence", inp.seq, comp.sequence() + meta.sequence());
+  print_cr("Quality", inp.seq, comp.quality() + meta.quality());
+  print_cr("Headers", inp.header, comp.headers() + meta.headers());
+  print_cr("Total", inp.total(), archive_size);
 
   os << sections_separator;
   print_string("# blocks: ", os);

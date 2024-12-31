@@ -18,27 +18,21 @@ void CompressionWorkspace::encodeChunk(const FastqChunk &chunk,
   comp_stats_.n_blocks++;
 
   seq_encoder.startChunk(cbs.seq);
+  qual_encoder.startChunk(cbs.qual);
 
   assert(prev_header_fields_ == first_header_fields_);
 
-  std::byte *dst_qual = cbs.qual.data();
-
   for (const FastqRecord &r : chunk.records) {
-    encodeHeader(r.header(), cbs);
-
     storeAsBytes(r.length, cbs.readlens);
 
-    // for now - just copy qualities
-    std::memcpy(dst_qual, to_byte_ptr(r.qualp), r.length);
-    dst_qual += r.length;
-
+    encodeHeader(r.header(), cbs);
     seq_encoder.encodeRecord(r);
+    qual_encoder.encodeRecord(r);
   }
 
   // const std::size_t compressed_size_seq = seq_coder.endChunk();
   const std::size_t compressed_size_seq = seq_encoder.endChunk();
-  const std::size_t compressed_size_qual =
-      static_cast<std::size_t>(dst_qual - cbs.qual.data());
+  const std::size_t compressed_size_qual = qual_encoder.endChunk();
 
   cbs.seq.resize(compressed_size_seq);
   cbs.qual.resize(compressed_size_qual);
@@ -59,9 +53,9 @@ void DecompressionWorkspace::decodeChunk(FastqChunk &chunk,
   decompressMiscBuffers(cbs);
 
   seq_decoder.startChunk(cbs.seq);
+  qual_decoder.startChunk(cbs.qual);
 
   char *dst = chunk.raw_data.data();
-  const std::byte *src_qual = cbs.qual.data();
 
   /* decompression is done in two passes:
    * the first one sets record pointers and decompresses headers,
@@ -82,16 +76,13 @@ void DecompressionWorkspace::decodeChunk(FastqChunk &chunk,
     *dst++ = '\n';
 
     r.qualp = dst;
-    std::memcpy(dst, src_qual, r.length);
     dst += r.length;
     *dst++ = '\n';
-
-    src_qual += r.length;
   }
 
   for (std::size_t i = cbs.original_size.n_records; i > 0; --i) {
     seq_decoder.decodeRecord(chunk.records[i - 1]);
-    // TODO: decode quality
+    qual_decoder.decodeRecord(chunk.records[i - 1]);
   }
 }
 

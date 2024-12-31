@@ -27,10 +27,9 @@ public:
   }
 
   static std::size_t compressBoundQuality(std::size_t original_size) {
-    return original_size;
-    // TODO: once we have fse in place...
     /* 94 different levels, so need 7 bits per symbol */
-    return original_size / 8 * 7 + extra_cbuffer_size;
+    return std::max(extra_cbuffer_size * FSE_Quality::N_MODELS,
+                    original_size * 7 / 8 + extra_cbuffer_size);
   }
 
 public:
@@ -59,7 +58,8 @@ public:
   friend struct WorkspaceTester;
 
   CompressionWorkspace(const DatasetMeta *meta)
-      : Workspace(meta), seq_encoder(&(meta->ft_dna)) {
+      : Workspace(meta), seq_encoder(&(meta->ft_seq)),
+        qual_encoder(&(meta->ft_qual)) {
     comp_stats_.header_fields.resize(fmt_.n_fields());
   }
 
@@ -87,6 +87,7 @@ private:
   /** Accumulates statistics across encoded chunks */
   CompressedStats comp_stats_;
   SequenceEncoder seq_encoder;
+  QualityEncoder qual_encoder;
 
 private:
   /**
@@ -102,7 +103,8 @@ public:
   friend struct WorkspaceTester;
 
   DecompressionWorkspace(const DatasetMeta *meta)
-      : Workspace(meta), seq_decoder(&(meta->ft_dna)) {}
+      : Workspace(meta), seq_decoder(&(meta->ft_seq)),
+        qual_decoder(&(meta->ft_qual)) {}
 
   /** Decodes reads from cbs into chunk; resizes chunk as needed */
   void decodeChunk(FastqChunk &chunk, CompressedBuffersSrc &cbs);
@@ -116,6 +118,7 @@ private:
 
 private:
   SequenceDecoder seq_decoder;
+  QualityDecoder qual_decoder;
 
 private:
   /** reserves enough space in `chunk` to decode `cbs` */

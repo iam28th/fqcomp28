@@ -22,15 +22,14 @@ SequenceEncoder::~SequenceEncoder() {
 }
 
 SequenceDecoder::SequenceDecoder(const FreqTable *ft) : FSE_Sequence(ft) {
-  std::vector<unsigned> dWorkspace(
+  std::vector<unsigned> wksp(
       FSE_BUILD_DTABLE_WKSP_SIZE_U32(ft->max_log, MAX_SYMBOL));
 
   for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
     tables_[ctx] = FSE_createDTable(ft->logs[ctx]);
     std::size_t ret = FSE_buildDTable_wksp(
         tables_[ctx], ft->norm_counts[ctx].data(), MAX_SYMBOL, ft->logs[ctx],
-        dWorkspace.data(),
-        dWorkspace.size() * sizeof(decltype(dWorkspace)::value_type));
+        wksp.data(), wksp.size() * sizeof(decltype(wksp)::value_type));
     assert(ret == 0);
   }
 }
@@ -72,7 +71,7 @@ void SequenceDecoder::endChunk() const {
 
 void SequenceEncoder::encodeRecord(const FastqRecord &r) {
 
-  unsigned ctx = INITIAL_CONTEXT & CTX_MASK;
+  unsigned ctx = INITIAL_CONTEXT & CONTEXT_MASK;
 
   /* form context of the last base; add CONTEXT_SIZE - 1 symbols
    * (the closest symbol is in the upper 2 bits of the context) */

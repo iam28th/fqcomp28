@@ -4,8 +4,8 @@ add_library(fqzcomp28Core OBJECT
     app.cpp
     archive.cpp
     compressed_buffers.cpp
-    entropy_common.cpp
-    entropy_quality.cpp
+    fse_common.cpp
+    fse_quality.cpp
     fastq_io.cpp
     fse_sequence.cpp
     headers.cpp

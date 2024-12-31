@@ -1,6 +1,10 @@
 #pragma once
 #include <vector>
 
+// assert needs to be defined before including fse headrs,
+// otherwise zstd defines it to noop ...
+#include <cassert>
+
 /* headers from zstd library */
 extern "C" {
 #define FSE_STATIC_LINKING_ONLY

@@ -1,6 +1,6 @@
 #pragma once
 #include "defs.h"
-#include "entropy_common.h"
+#include "fse_common.h"
 #include "sequtils.h"
 #include <array>
 
@@ -10,11 +10,11 @@ class FSE_Sequence {
 public:
   /** number of bases in sequence context */
   constexpr static int CONTEXT_SIZE = 5;
-  constexpr static unsigned CTX_MASK = (1 << (CONTEXT_SIZE * 2)) - 1;
+  constexpr static unsigned CONTEXT_MASK = (1 << (CONTEXT_SIZE * 2)) - 1;
 
   /** records base in the lower 2 bits of ctx */
   constexpr static unsigned addBaseLower(unsigned ctx, char base) {
-    return ((ctx << 2) + base2bits(base)) & CTX_MASK;
+    return ((ctx << 2) + base2bits(base)) & CONTEXT_MASK;
   }
 
   /** records base (in 2bit reperesentation) in the upper 2 bits of ctx */
@@ -32,10 +32,11 @@ public:
 
   constexpr static int MAX_SYMBOL = base2bits('T');
   constexpr static int ALPHABET_SIZE = MAX_SYMBOL + 1;
-  // using initial ctx value from fqzcomp4
-  // (but in reverse base order)
-  // direct base order is: 0x007616c7
-  // "it corresponds to 12-kmer that does not occur in a human genome" (c)
+
+  /* Initial ctx value from fqzcomp4
+   * (but in reverse base order)
+   * direct base order is: 0x007616c7
+   * "it corresponds to 12-kmer that does not occur in a human genome" (c) */
   constexpr static int RARE_KMER_LEN = 12;
   constexpr static char INITIAL_CONTEXT_SEQ[RARE_KMER_LEN + 1] = "CTCCACCCTCCT";
   constexpr static char INITIAL_CONTEXT_SEQ_REV[RARE_KMER_LEN + 1] =
@@ -87,12 +88,17 @@ protected:
 
 class SequenceEncoder : FSE_Sequence {
 public:
-  SequenceEncoder(const FreqTable *ft);
+  SequenceEncoder(const FreqTable *);
   ~SequenceEncoder();
+
+  /**
+   * init states and tie bitStream to dst;
+   * dst should have been resized by the caller
+   */
+  void startChunk(std::vector<std::byte> &dst);
 
   void encodeRecord(const FastqRecord &);
 
-  void startChunk(std::vector<std::byte> &dst);
   /** @return Resulting compressed size */
   std::size_t endChunk();
 
