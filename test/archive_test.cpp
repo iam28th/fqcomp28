@@ -35,7 +35,7 @@ struct ArchiveTester {
   static void writeBlock() {
     const path_t input = "test/data/without_ns.fastq";
     const path_t archive_path = "archive.f2q8z";
-    const std::size_t chunk_size = 4 * 1024; // 4Kb
+    const std::size_t chunk_size = 100 * 1024; // 150Kb
 
     SECTION("checks") {
       Archive archive_out(archive_path, input);

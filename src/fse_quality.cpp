@@ -146,11 +146,7 @@ FSE_Quality::calculateFreqTable(const FastqChunk &chunk) {
       unsigned q = static_cast<unsigned>(c) - QUAL_OFFSET;
       assert(q <= MAX_SYMBOL);
 
-#ifndef NDEBUG
       counts.at(ctx).at(q)++;
-#else
-      counts[ctx][q]++;
-#endif
 
       ctx = calcContext(q, q1, q2);
       q2 = q1;
@@ -162,14 +158,14 @@ FSE_Quality::calculateFreqTable(const FastqChunk &chunk) {
 
   for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
     const std::size_t ctx_size =
-        std::accumulate(counts[ctx].begin(), counts[ctx].end(), std::size_t{});
+        std::accumulate(counts.at(ctx).begin(), counts.at(ctx).end(), std::size_t{});
 
-    ft.logs[ctx] = FSE_optimalTableLog(0, ctx_size, MAX_SYMBOL);
+    ft.logs.at(ctx) = FSE_optimalTableLog(0, ctx_size, MAX_SYMBOL);
     [[maybe_unused]] const std::size_t log =
-        FSE_normalizeCount(ft.norm_counts[ctx].data(), ft.logs[ctx],
-                           counts[ctx].data(), ctx_size, MAX_SYMBOL, 1);
-    assert(log == ft.logs[ctx]);
-    ft.max_log = std::max(ft.max_log, ft.logs[ctx]);
+        FSE_normalizeCount(ft.norm_counts.at(ctx).data(), ft.logs.at(ctx),
+                           counts.at(ctx).data(), ctx_size, MAX_SYMBOL, 1);
+    assert(log == ft.logs.at(ctx));
+    ft.max_log = std::max(ft.max_log, ft.logs.at(ctx));
   }
   return ft;
 }

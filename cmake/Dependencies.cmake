@@ -8,7 +8,6 @@ FetchContent_Declare(
     QUIET
 )
 
-# TODO: maybe only static is sufficient
 set(ZSTD_BUILD_STATIC ON)
 set(ZSTD_BUILD_COMPRESSION ON)
 set(ZSTD_BUILD_DECOMPRESSION ON)
@@ -28,3 +27,5 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(cli11_proj zstd)
+
+include(${CMAKE_SOURCE_DIR}/cmake/Libbsc.cmake)

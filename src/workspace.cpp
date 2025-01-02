@@ -209,16 +209,17 @@ void CompressionWorkspace::compressMiscBuffers(CompressedBuffersDst &cbs) {
 }
 
 void DecompressionWorkspace::decompressMiscBuffers(CompressedBuffersSrc &cbs) {
+  // TODO refactor to loop over all buffers
   cbs.readlens.resize(cbs.original_size.readlens);
-  memdecompress(cbs.readlens.data(), cbs.compressed_readlens.data(),
-                cbs.compressed_readlens.size());
+  memdecompress(cbs.readlens.data(), cbs.readlens.size(),
+                cbs.compressed_readlens.data(), cbs.compressed_readlens.size());
 
   cbs.n_count.resize(cbs.original_size.n_count);
-  memdecompress(cbs.n_count.data(), cbs.compressed_n_count.data(),
-                cbs.compressed_n_count.size());
+  memdecompress(cbs.n_count.data(), cbs.n_count.size(),
+                cbs.compressed_n_count.data(), cbs.compressed_n_count.size());
 
   cbs.n_pos.resize(cbs.original_size.n_pos);
-  memdecompress(cbs.n_pos.data(), cbs.compressed_n_pos.data(),
+  memdecompress(cbs.n_pos.data(), cbs.n_pos.size(), cbs.compressed_n_pos.data(),
                 cbs.compressed_n_pos.size());
 
   for (std::size_t i = 0, E = fmt_.n_fields(); i < E; ++i) {
@@ -232,17 +233,18 @@ void DecompressionWorkspace::decompressMiscBuffers(CompressedBuffersSrc &cbs) {
       field_data.contentLength.resize(original_size.contentLength);
 
       memdecompress(field_data.isDifferentFlag.data(),
+                    field_data.isDifferentFlag.size(),
                     field_cdata.isDifferentFlag.data(),
                     field_cdata.isDifferentFlag.size());
-      memdecompress(field_data.content.data(), field_cdata.content.data(),
-                    field_cdata.content.size());
-      memdecompress(field_data.contentLength.data(),
-                    field_cdata.contentLength.data(),
-                    field_cdata.contentLength.size());
+      memdecompress(field_data.content.data(), field_data.content.size(),
+                    field_cdata.content.data(), field_cdata.content.size());
+      memdecompress(
+          field_data.contentLength.data(), field_data.contentLength.size(),
+          field_cdata.contentLength.data(), field_cdata.contentLength.size());
     } else {
       field_data.content.resize(original_size.content);
-      memdecompress(field_data.content.data(), field_cdata.content.data(),
-                    field_cdata.content.size());
+      memdecompress(field_data.content.data(), field_data.content.size(),
+                    field_cdata.content.data(), field_cdata.content.size());
     }
   }
 }
@@ -250,7 +252,7 @@ void DecompressionWorkspace::decompressMiscBuffers(CompressedBuffersSrc &cbs) {
 std::size_t
 CompressionWorkspace::compressBuffer(std::vector<std::byte> &dst,
                                      const std::vector<std::byte> &src) {
-  dst.resize(src.size() + extra_cbuffer_size);
+  dst.resize(src.size() + extra_csize_misc);
   const std::size_t csize = memcompress(dst.data(), src.data(), src.size());
   dst.resize(csize);
   return csize;

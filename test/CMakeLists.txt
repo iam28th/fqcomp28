@@ -15,6 +15,7 @@ add_executable(unit_tests
     fse_quality_test.cpp
     fse_sequence_test.cpp
     headers_test.cpp
+    memcompress_test.cpp
     test_utils.cpp
 )
 

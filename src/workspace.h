@@ -11,9 +11,11 @@ class Workspace {
 protected:
   /**
    * additional space to add when estimating compressed sizes
-   * (required if input is very small)
+   * (required if input is very small for FSE, and _always_ for
+   * general-compressed buffers)
    */
-  static constexpr std::size_t extra_cbuffer_size = 1024;
+  static constexpr std::size_t extra_csize_fse = 1024;
+  static constexpr std::size_t extra_csize_misc = 28; // LIBBSC_HEADER_SIZE
 
 public:
   static std::size_t compressBoundSequence(std::size_t original_size) {
@@ -21,15 +23,15 @@ public:
      * bit-packing
      * ...but also for very small inputs (e.g., 1 base) compressed size
      * is much larger than original size so I'm using a heuristic... */
-    if (original_size < extra_cbuffer_size)
-      return extra_cbuffer_size * FSE_Sequence::N_MODELS;
-    return original_size / 4 + extra_cbuffer_size;
+    if (original_size < extra_csize_fse)
+      return extra_csize_fse * FSE_Sequence::N_MODELS;
+    return original_size / 4 + extra_csize_fse;
   }
 
   static std::size_t compressBoundQuality(std::size_t original_size) {
     /* 94 different levels, so need 7 bits per symbol */
-    return std::max(extra_cbuffer_size * FSE_Quality::N_MODELS,
-                    original_size * 7 / 8 + extra_cbuffer_size);
+    return std::max(extra_csize_fse * FSE_Quality::N_MODELS,
+                    original_size * 7 / 8 + extra_csize_fse);
   }
 
 public:

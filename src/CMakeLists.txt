@@ -19,18 +19,20 @@ add_library(fqzcomp28Core OBJECT
 target_include_directories(fqzcomp28Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 
-target_link_libraries(fqzcomp28Core PRIVATE 
+target_link_libraries(fqzcomp28Core PRIVATE
     CLI11::CLI11
     libzstd_static
+    bsc
 )
 
-# mark include folders as 'system', so that the headers don't yield warnings  
-target_include_directories(fqzcomp28Core SYSTEM PUBLIC 
+# mark include folders as 'system', so that the headers don't yield warnings
+target_include_directories(fqzcomp28Core SYSTEM PUBLIC
     $<TARGET_PROPERTY:libzstd_static,INTERFACE_INCLUDE_DIRECTORIES>
+    ${bsc_SOURCE_DIR}
 )
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU") 
-    # public so that fqzcomp28 executable and unit_tests 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # public so that fqzcomp28 executable and unit_tests
     # also have these flags
     target_compile_options(fqzcomp28Core PUBLIC
         -Wall
@@ -53,6 +55,6 @@ add_executable(fqzcomp28 entry_point.cpp)
 target_link_libraries(fqzcomp28 PRIVATE fqzcomp28Core)
 
 # move executable to project root
-add_custom_command(TARGET fqzcomp28 
+add_custom_command(TARGET fqzcomp28
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E rename $<TARGET_FILE:fqzcomp28> ${CMAKE_SOURCE_DIR}/$<TARGET_FILE_NAME:fqzcomp28>)
