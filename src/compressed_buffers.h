@@ -31,16 +31,17 @@ struct cb_original_sizes_t {
   }
 };
 
-template <typename T>
-  requires std::is_base_of_v<headers::FieldStorage, T>
 struct CompressedBuffers {
+protected:
   CompressedBuffers() = default;
+  virtual ~CompressedBuffers() = default;
+
+public:
   std::vector<std::byte> seq, qual;
 
   std::vector<std::byte> readlens;
   std::vector<std::byte> compressed_readlens;
 
-  std::vector<T> header_fields;
   std::vector<headers::CompressedFieldStorage> compressed_header_fields;
 
   std::vector<std::byte> n_count;
@@ -51,14 +52,12 @@ struct CompressedBuffers {
 
   cb_original_sizes_t original_size;
 
-  void clear() {
+  virtual void clear() {
     seq.clear();
     qual.clear();
 
     readlens.clear(), compressed_readlens.clear();
 
-    for (auto &hf : header_fields)
-      hf.clear();
     for (auto &chf : compressed_header_fields)
       chf.clear();
 
@@ -67,8 +66,34 @@ struct CompressedBuffers {
 };
 
 /** Used at compression */
-using CompressedBuffersDst = CompressedBuffers<headers::FieldStorageDst>;
-/** Used at decompression */
-using CompressedBuffersSrc = CompressedBuffers<headers::FieldStorageSrc>;
+class CompressedBuffersDst : public CompressedBuffers {
+public:
+  std::vector<headers::FieldStorageDst> header_fields;
 
+  void clear() override {
+    CompressedBuffers::clear();
+
+    for (auto &hf : header_fields)
+      hf.clear();
+  }
+};
+
+/** Used at decompression */
+class CompressedBuffersSrc : public CompressedBuffers {
+public:
+  std::vector<headers::FieldStorageSrc> header_fields;
+
+  // required, becuase sequences are encoded in decoded in a different order
+  struct {
+    std::size_t n_count = 0;
+    std::size_t n_pos = 0;
+  } index;
+
+  void clear() override {
+    CompressedBuffers::clear();
+    for (auto &hf : header_fields)
+      hf.clear();
+    index = {};
+  }
+};
 } // namespace fqzcomp28

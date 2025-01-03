@@ -15,7 +15,7 @@ std::vector<char> getConcatenatedSequences(const FastqChunk &chunk) {
 }
 
 TEST_CASE("Sequence encoding (without Ns)") {
-  const path_t inp_path = "test/data/without_ns.fastq";
+  const path_t inp_path = "test/data/SRR065390_sub_1.fastq";
 
   FastqChunk chunk = loadFastqFileContents(inp_path);
   FSE_Sequence::FreqTable ft = FSE_Sequence::calculateFreqTable(chunk);
@@ -29,20 +29,22 @@ TEST_CASE("Sequence encoding (without Ns)") {
 
   SequenceEncoder encoder(&ft);
   SequenceDecoder decoder(&ft);
+  CompressedBuffersDst cbs_dst;
 
   encoder.startChunk(output_buf);
-  for (const auto &r : chunk.records)
-    encoder.encodeRecord(r);
+  for (auto &r : chunk.records)
+    encoder.encodeRecord(r, cbs_dst);
   const std::size_t compressed_size = encoder.endChunk();
   assert(compressed_size != 0); // 0 means didn't fit into dst
   output_buf.resize(compressed_size);
 
+  CompressedBuffersSrc cbs_src = convertToSrcBuffers(std::move(cbs_dst));
   decoder.startChunk(output_buf);
   for (auto &r : chunk.records | std::views::reverse)
-    decoder.decodeRecord(r); // decoder modifies memory r points to
-  decoder.endChunk();
-
+    decoder.decodeRecord(r, cbs_src); // decoder modifies memory r points to
   const std::vector<char> decoded_sequences = getConcatenatedSequences(chunk);
+  CHECK(sequences == decoded_sequences);
+  decoder.endChunk();
 
   CHECK(sequences == decoded_sequences);
 }

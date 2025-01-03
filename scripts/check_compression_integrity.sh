@@ -7,13 +7,14 @@ INP1="$1"
 # TODO use cmp for large files
 DIFFCMD=diff
 
-cleanup() 
+cleanup()
 {
         echo "no diff found"
         rm -f "$ARCHIVE" "$DECOMP1"
-        return 
+        return
 }
 
-./fqzcomp28 c --input1 "$INP1" -o "$ARCHIVE"
-./fqzcomp28 d --input "$ARCHIVE" --o1 "$DECOMP1"
-"$DIFFCMD" "$INP1" "$DECOMP1" && cleanup
+/usr/bin/time -v ./fqzcomp28 c --input1 "$INP1" -o "$ARCHIVE" && \
+        ./fqzcomp28 d --input "$ARCHIVE" --o1 "$DECOMP1" && \
+        "$DIFFCMD" "$INP1" "$DECOMP1" \
+        && cleanup

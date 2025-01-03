@@ -11,7 +11,7 @@ Workspace::Workspace(const DatasetMeta *meta)
     : meta_(meta), fmt_(meta->header_fmt),
       first_header_fields_(fromHeader(meta->first_header, fmt_)) {}
 
-void CompressionWorkspace::encodeChunk(const FastqChunk &chunk,
+void CompressionWorkspace::encodeChunk(FastqChunk &chunk,
                                        CompressedBuffersDst &cbs) {
   prepareBuffersForEncoding(chunk, cbs);
   startNewChunk();
@@ -22,11 +22,11 @@ void CompressionWorkspace::encodeChunk(const FastqChunk &chunk,
 
   assert(prev_header_fields_ == first_header_fields_);
 
-  for (const FastqRecord &r : chunk.records) {
+  for (FastqRecord &r : chunk.records) {
     storeAsBytes(r.length, cbs.readlens);
 
     encodeHeader(r.header(), cbs);
-    seq_encoder.encodeRecord(r);
+    seq_encoder.encodeRecord(r, cbs);
     qual_encoder.encodeRecord(r);
   }
 
@@ -68,7 +68,7 @@ void DecompressionWorkspace::decodeChunk(FastqChunk &chunk,
     *dst++ = '\n';
 
     r.seqp = dst;
-    r.length = loadFromBytes<readlen_t>(cbs.readlens, 2 * i);
+    r.length = loadFromBytes<readlen_t>(cbs.readlens, sizeof(readlen_t) * i);
     dst += r.length;
     *dst++ = '\n';
 
@@ -80,8 +80,10 @@ void DecompressionWorkspace::decodeChunk(FastqChunk &chunk,
     *dst++ = '\n';
   }
 
+  assert(cbs.index.n_pos == cbs.n_pos.size());
+  assert(cbs.index.n_count == cbs.n_count.size());
   for (std::size_t i = cbs.original_size.n_records; i > 0; --i) {
-    seq_decoder.decodeRecord(chunk.records[i - 1]);
+    seq_decoder.decodeRecord(chunk.records[i - 1], cbs);
     qual_decoder.decodeRecord(chunk.records[i - 1]);
   }
 }
@@ -214,10 +216,12 @@ void DecompressionWorkspace::decompressMiscBuffers(CompressedBuffersSrc &cbs) {
   memdecompress(cbs.readlens.data(), cbs.readlens.size(),
                 cbs.compressed_readlens.data(), cbs.compressed_readlens.size());
 
+  cbs.index.n_count = cbs.original_size.n_count;
   cbs.n_count.resize(cbs.original_size.n_count);
   memdecompress(cbs.n_count.data(), cbs.n_count.size(),
                 cbs.compressed_n_count.data(), cbs.compressed_n_count.size());
 
+  cbs.index.n_pos = cbs.original_size.n_pos;
   cbs.n_pos.resize(cbs.original_size.n_pos);
   memdecompress(cbs.n_pos.data(), cbs.n_pos.size(), cbs.compressed_n_pos.data(),
                 cbs.compressed_n_pos.size());

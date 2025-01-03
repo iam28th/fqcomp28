@@ -1,4 +1,5 @@
 #pragma once
+#include "compressed_buffers.h"
 #include "defs.h"
 #include "fse_common.h"
 #include "sequtils.h"
@@ -8,14 +9,15 @@ namespace fqzcomp28 {
 
 class FSE_Sequence {
 public:
-  /** number of bases in sequence context */
-  constexpr static int CONTEXT_SIZE = 5;
+  /**
+   * number of bases in sequence context; increasing leads to
+   * slightly higher CR but noticeably longer compression
+   */
+  constexpr static int CONTEXT_SIZE = 4;
   constexpr static unsigned CONTEXT_MASK = (1 << (CONTEXT_SIZE * 2)) - 1;
 
-  /** records base in the lower 2 bits of ctx */
-  constexpr static unsigned addBaseLower(unsigned ctx, char base) {
-    return ((ctx << 2) + base2bits(base)) & CONTEXT_MASK;
-  }
+  /** records base (in 2bit representation) in the lower 2 bits of ctx */
+  static unsigned addBaseLower(unsigned ctx, char base);
 
   /** records base (in 2bit reperesentation) in the upper 2 bits of ctx */
   constexpr static unsigned addSymUpper(unsigned ctx, unsigned sym) {
@@ -92,12 +94,16 @@ public:
   ~SequenceEncoder();
 
   /**
-   * init states and tie bitStream to dst;
+   * Initialize states and tie bitStream_ to dst;
    * dst should have been resized by the caller
    */
   void startChunk(std::vector<std::byte> &dst);
 
-  void encodeRecord(const FastqRecord &);
+  /**
+   * Writes sequence to bitStream_, skipping Ns;
+   * count and positions of Ns are written into cbs
+   */
+  void encodeRecord(FastqRecord &rec, CompressedBuffersDst &cbs);
 
   /** @return Resulting compressed size */
   std::size_t endChunk();
@@ -113,8 +119,11 @@ public:
   SequenceDecoder(const FreqTable *ft);
   ~SequenceDecoder();
 
-  /** assumes that record fields readlen and seqp are correctly set */
-  void decodeRecord(FastqRecord &);
+  /**
+   * Assumes that r's fields readlen and seqp are correctly set;
+   * decodes bases from bitStream_ and reads Ns from cbs
+   */
+  void decodeRecord(FastqRecord &r, CompressedBuffersSrc &cbs);
 
   void startChunk(std::vector<std::byte> &src);
   void endChunk() const;
@@ -123,6 +132,7 @@ private:
   BIT_DStream_t bitStream_;
   fse_array<FSE_DState_t> states_;
   fse_array<FSE_DTable *> tables_;
+  std::vector<readlen_t> npos_buffer_;
 };
 
 } // namespace fqzcomp28

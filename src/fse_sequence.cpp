@@ -1,8 +1,26 @@
 #include "fse_sequence.h"
 #include "sequtils.h"
+#include "utils.h"
 #include <numeric>
+#include <ranges>
 
 namespace fqzcomp28 {
+
+constexpr std::array<unsigned, 128> base2bits_arr = []() {
+  std::array<unsigned, 128> ret;
+  ret.fill(std::numeric_limits<unsigned>::max());
+  ret['A'] = 0b00;
+  ret['C'] = 0b01;
+  ret['G'] = 0b10;
+  ret['T'] = 0b11;
+  return ret;
+}();
+
+unsigned FSE_Sequence::addBaseLower(unsigned ctx, char base) {
+  return ((ctx << 2) + base2bits_arr[static_cast<unsigned>(base)]) &
+         CONTEXT_MASK;
+}
+
 SequenceEncoder::SequenceEncoder(const FreqTable *ft) : FSE_Sequence(ft) {
   auto wksp = createCTableBuildWksp(MAX_SYMBOL, ft_->max_log);
 
@@ -27,7 +45,7 @@ SequenceDecoder::SequenceDecoder(const FreqTable *ft) : FSE_Sequence(ft) {
 
   for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
     tables_[ctx] = FSE_createDTable(ft->logs[ctx]);
-    std::size_t ret = FSE_buildDTable_wksp(
+    [[maybe_unused]] std::size_t ret = FSE_buildDTable_wksp(
         tables_[ctx], ft->norm_counts[ctx].data(), MAX_SYMBOL, ft->logs[ctx],
         wksp.data(), wksp.size() * sizeof(decltype(wksp)::value_type));
     assert(ret == 0);
@@ -69,7 +87,22 @@ void SequenceDecoder::endChunk() const {
   assert(BIT_endOfDStream(&bitStream_));
 }
 
-void SequenceEncoder::encodeRecord(const FastqRecord &r) {
+void SequenceEncoder::encodeRecord(FastqRecord &r, CompressedBuffersDst &cbs) {
+  readlen_t n_count = 0;
+
+  readlen_t prev_n_pos = 0;
+  for (unsigned short i = 0; i < r.length; ++i) {
+    if (r.seqp[i] == 'N') {
+      n_count++;
+      const readlen_t delta = i - prev_n_pos;
+      storeAsBytes(delta, cbs.n_pos);
+      // TODO 'most likely' base instead of always A
+      r.seqp[i] = 'A';
+      prev_n_pos = i;
+    }
+  }
+
+  storeAsBytes(n_count, cbs.n_count);
 
   unsigned ctx = INITIAL_CONTEXT & CONTEXT_MASK;
 
@@ -83,9 +116,9 @@ void SequenceEncoder::encodeRecord(const FastqRecord &r) {
 
   /* points to the first base that has less than
    * CONTEXT_SIZE bases to its left */
-  const char *first_base_with_partial_ctx = r.length > CONTEXT_SIZE
-                                                ? r.seqp + CONTEXT_SIZE - 1
-                                                : r.seqp + r.length - 1;
+  const char *first_base_with_partial_ctx =
+      r.seqp + (r.length > CONTEXT_SIZE ? CONTEXT_SIZE - 1 : r.length - 1);
+
   assert(*(r.seqp - 1) == '\n'); /* it's safe to use this address becuase it's
                                     in a block of fastq data */
 
@@ -101,7 +134,7 @@ void SequenceEncoder::encodeRecord(const FastqRecord &r) {
     ctx = addBaseLower(ctx, *(base - CONTEXT_SIZE));
     assert(getClosestBase(ctx) == *(base - 1));
 
-    const unsigned sym = base2bits(*base);
+    const unsigned sym = base2bits_arr[static_cast<unsigned>(*base)];
     FSE_encodeSymbol(&bitStream_, states_.begin() + ctx, sym);
     BIT_flushBitsFast(&bitStream_); // TODO only flush on every K-th iteration?
   }
@@ -121,20 +154,43 @@ void SequenceEncoder::encodeRecord(const FastqRecord &r) {
     if (base == r.seqp)
       assert(ctx == INITIAL_CONTEXT);
 
-    const unsigned sym = base2bits(*base);
+    const unsigned sym = base2bits_arr[static_cast<unsigned>(*base)];
     FSE_encodeSymbol(&bitStream_, states_.begin() + ctx, sym);
     BIT_flushBitsFast(&bitStream_);
   }
 }
 
-void SequenceDecoder::decodeRecord(FastqRecord &r) {
+void SequenceDecoder::decodeRecord(FastqRecord &r, CompressedBuffersSrc &cbs) {
+  assert(cbs.index.n_count >= sizeof(readlen_t));
+  const auto n_count = loadFromBytes<readlen_t>(
+      cbs.n_count, cbs.index.n_count - sizeof(readlen_t));
+  cbs.index.n_count -= sizeof(readlen_t);
+
+  npos_buffer_.resize(n_count);
+  for (auto &npos : npos_buffer_ | std::views::reverse) {
+    assert(cbs.index.n_pos >= sizeof(readlen_t));
+    npos = loadFromBytes<readlen_t>(cbs.n_pos,
+                                    cbs.index.n_pos - sizeof(readlen_t));
+    assert(npos < r.length);
+    cbs.index.n_pos -= sizeof(readlen_t);
+  }
+
   unsigned ctx = INITIAL_CONTEXT;
-  for (char *out = r.seqp, *E = r.seqp + r.length; out != E; ++out) {
-    unsigned sym = FSE_decodeSymbol(states_.data() + ctx, &bitStream_);
+
+  readlen_t prev_n_pos = 0;
+  unsigned n_added = 0;
+  for (unsigned short i = 0; i < r.length; ++i) {
+    const unsigned sym = FSE_decodeSymbol(states_.data() + ctx, &bitStream_);
     BIT_reloadDStream(&bitStream_);
 
-    *out = bits2base(sym);
+    r.seqp[i] = bits2base(sym);
     ctx = addSymUpper(ctx, sym);
+
+    if ((n_added != n_count) && (i == prev_n_pos + npos_buffer_[n_added])) {
+      r.seqp[i] = 'N';
+      prev_n_pos = i;
+      n_added++;
+    }
   }
 }
 
@@ -153,7 +209,8 @@ FSE_Sequence::calculateFreqTable(const FastqChunk &chunk) {
       if (c == 'N')
         continue;
 
-      const unsigned symbol = base2bits(c);
+      const unsigned symbol = base2bits_arr[static_cast<unsigned>(c)];
+      assert(symbol <= MAX_SYMBOL);
       counts[ctx][symbol]++;
 
       ctx = addSymUpper(ctx, symbol);
@@ -167,7 +224,7 @@ FSE_Sequence::calculateFreqTable(const FastqChunk &chunk) {
         std::accumulate(counts[ctx].begin(), counts[ctx].end(), std::size_t{});
 
     ft.logs[ctx] = FSE_optimalTableLog(0, ctx_size, MAX_SYMBOL);
-    const std::size_t log =
+    [[maybe_unused]] const std::size_t log =
         FSE_normalizeCount(ft.norm_counts[ctx].data(), ft.logs[ctx],
                            counts[ctx].data(), ctx_size, MAX_SYMBOL, 1);
     assert(log == ft.logs[ctx]);

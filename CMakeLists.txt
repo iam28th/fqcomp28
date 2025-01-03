@@ -18,7 +18,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 add_subdirectory(src bin)
-if (${BUILD_TESTING}) 
+if (${BUILD_TESTING})
     include(CTest)
     add_subdirectory(test)
 endif()

@@ -66,7 +66,7 @@ public:
   }
 
   /** Encodes reads into cbs, allocating memory in cbs as needed */
-  void encodeChunk(const FastqChunk &, CompressedBuffersDst &cbs);
+  void encodeChunk(FastqChunk &, CompressedBuffersDst &cbs);
 
   const CompressedStats &stats() const { return comp_stats_; }
 

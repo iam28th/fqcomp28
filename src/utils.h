@@ -1,17 +1,21 @@
 #pragma once
 #include "defs.h"
+#include <cassert>
 #include <cstring>
 #include <vector>
 
 namespace fqzcomp28 {
 
 /**
+ * TODO test
  * @brief appends bytes from val to storage
  */
 template <TriviallyCopyable T>
 void storeAsBytes(const T val, std::vector<std::byte> &storage) {
   const std::byte *p = reinterpret_cast<const std::byte *>(&val);
-  storage.insert(storage.end(), p, p + sizeof(val));
+  std::size_t old_size = storage.size();
+  storage.resize(storage.size() + sizeof(T));
+  std::memcpy(storage.data() + old_size, p, sizeof(val));
 }
 
 /**
@@ -19,7 +23,8 @@ void storeAsBytes(const T val, std::vector<std::byte> &storage) {
  */
 template <TriviallyCopyable T>
 T loadFromBytes(const std::vector<std::byte> &storage, const std::size_t i) {
-  T ret;
+  T ret = 0;
+  assert(i + sizeof(T) <= storage.size());
   std::memcpy(reinterpret_cast<std::byte *>(&ret), storage.data() + i,
               sizeof(T));
   return ret;

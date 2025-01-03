@@ -28,6 +28,14 @@ inline CompressedBuffersSrc convertToSrcBuffers(CompressedBuffersDst &&in) {
   src.seq = std::move(in.seq);
   src.qual = std::move(in.qual);
 
+  src.n_count = std::move(in.n_count);
+  src.index.n_count = src.n_count.size();
+  src.compressed_n_count = std::move(in.compressed_n_count);
+
+  src.n_pos = std::move(in.n_pos);
+  src.index.n_pos = src.n_pos.size();
+  src.compressed_n_pos = std::move(in.compressed_n_pos);
+
   src.readlens = std::move(in.readlens);
   src.compressed_readlens = std::move(in.compressed_readlens);
 

@@ -34,6 +34,7 @@ bool FastqReader::readNextChunk(FastqChunk &chunk) {
   partial1_.clear();
 
   ifs1_.read(buf, static_cast<std::streamsize>(to_read));
+  assert(ifs1_);
 
   /* parse data to find last fully loaded record */
   const std::size_t actual_chunk_size = parseRecords(chunk);
