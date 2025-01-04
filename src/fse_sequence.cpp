@@ -194,7 +194,7 @@ void SequenceDecoder::decodeRecord(FastqRecord &r, CompressedBuffersSrc &cbs) {
   }
 }
 
-FSE_Sequence::FreqTable
+std::unique_ptr<FSE_Sequence::FreqTable>
 FSE_Sequence::calculateFreqTable(const FastqChunk &chunk) {
   /* count frequencies of each symbol in every context */
   fse_array<std::array<unsigned, ALPHABET_SIZE>> counts{};
@@ -217,18 +217,18 @@ FSE_Sequence::calculateFreqTable(const FastqChunk &chunk) {
     }
   }
   /* normalize frequencies */
-  FreqTable ft{};
+  auto ft = std::make_unique<FreqTable>();
 
   for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
     const std::size_t ctx_size =
         std::accumulate(counts[ctx].begin(), counts[ctx].end(), std::size_t{});
 
-    ft.logs[ctx] = FSE_optimalTableLog(0, ctx_size, MAX_SYMBOL);
+    ft->logs[ctx] = FSE_optimalTableLog(0, ctx_size, MAX_SYMBOL);
     [[maybe_unused]] const std::size_t log =
-        FSE_normalizeCount(ft.norm_counts[ctx].data(), ft.logs[ctx],
+        FSE_normalizeCount(ft->norm_counts[ctx].data(), ft->logs[ctx],
                            counts[ctx].data(), ctx_size, MAX_SYMBOL, 1);
-    assert(log == ft.logs[ctx]);
-    ft.max_log = std::max(ft.max_log, ft.logs[ctx]);
+    assert(log == ft->logs[ctx]);
+    ft->max_log = std::max(ft->max_log, ft->logs[ctx]);
   }
   return ft;
 }

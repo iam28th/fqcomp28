@@ -29,8 +29,8 @@ struct DatasetMeta {
   /** used for delta-ing the first header in each chunk */
   std::string first_header;
   headers::HeaderFormatSpeciciation header_fmt;
-  FSE_Sequence::FreqTable ft_seq;
-  FSE_Quality::FreqTable ft_qual;
+  std::unique_ptr<FSE_Sequence::FreqTable> ft_seq;
+  std::unique_ptr<FSE_Quality::FreqTable> ft_qual;
 
   auto n_fields_of_type(headers::FieldType typ) const {
     const auto &types = header_fmt.field_types;
@@ -46,8 +46,8 @@ struct DatasetMeta {
   std::size_t headers() const {
     return sizeof(readlen_t) + first_header.length();
   }
-  std::size_t sequence() const { return sizeof(ft_seq); }
-  std::size_t quality() const { return sizeof(ft_qual); }
+  std::size_t sequence() const { return sizeof(*ft_seq); }
+  std::size_t quality() const { return sizeof(*ft_qual); }
 };
 
 bool operator==(const DatasetMeta &lhs, const DatasetMeta &rhs);

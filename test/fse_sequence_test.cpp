@@ -18,7 +18,7 @@ TEST_CASE("Sequence encoding (without Ns)") {
   const path_t inp_path = "test/data/SRR065390_sub_1.fastq";
 
   FastqChunk chunk = loadFastqFileContents(inp_path);
-  FSE_Sequence::FreqTable ft = FSE_Sequence::calculateFreqTable(chunk);
+  auto ft = FSE_Sequence::calculateFreqTable(chunk);
 
   const std::vector<char> sequences = getConcatenatedSequences(chunk);
   const std::size_t input_size = chunk.tot_reads_length;
@@ -27,8 +27,8 @@ TEST_CASE("Sequence encoding (without Ns)") {
   std::vector<std::byte> output_buf;
   output_buf.resize(Workspace::compressBoundSequence(input_size));
 
-  SequenceEncoder encoder(&ft);
-  SequenceDecoder decoder(&ft);
+  SequenceEncoder encoder(ft.get());
+  SequenceDecoder decoder(ft.get());
   CompressedBuffersDst cbs_dst;
 
   encoder.startChunk(output_buf);

@@ -60,8 +60,8 @@ public:
   friend struct WorkspaceTester;
 
   CompressionWorkspace(const DatasetMeta *meta)
-      : Workspace(meta), seq_encoder(&(meta->ft_seq)),
-        qual_encoder(&(meta->ft_qual)) {
+      : Workspace(meta), seq_encoder(meta->ft_seq.get()),
+        qual_encoder(meta->ft_qual.get()) {
     comp_stats_.header_fields.resize(fmt_.n_fields());
   }
 
@@ -105,8 +105,8 @@ public:
   friend struct WorkspaceTester;
 
   DecompressionWorkspace(const DatasetMeta *meta)
-      : Workspace(meta), seq_decoder(&(meta->ft_seq)),
-        qual_decoder(&(meta->ft_qual)) {}
+      : Workspace(meta), seq_decoder(meta->ft_seq.get()),
+        qual_decoder(meta->ft_qual.get()) {}
 
   /** Decodes reads from cbs into chunk; resizes chunk as needed */
   void decodeChunk(FastqChunk &chunk, CompressedBuffersSrc &cbs);

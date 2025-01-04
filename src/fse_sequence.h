@@ -82,7 +82,7 @@ public:
 
   FSE_Sequence(const FreqTable *ft) : ft_(ft) {}
 
-  static FreqTable calculateFreqTable(const FastqChunk &chunk);
+  static std::unique_ptr<FreqTable> calculateFreqTable(const FastqChunk &chunk);
 
 protected:
   const FreqTable *ft_;

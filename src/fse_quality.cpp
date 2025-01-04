@@ -1,16 +1,21 @@
 #include "fse_quality.h"
-// #include <cassert>
 #include <numeric>
 
 namespace fqzcomp28 {
 
 QualityEncoder::QualityEncoder(const FreqTable *ft) : FSE_Quality(ft) {
-  auto wksp = createCTableBuildWksp(MAX_SYMBOL, ft_->max_log);
+  // according to commens in fse.h, MAX_SYMBOL should be enough there
+  // but according to valgrind it's not;
+  // (could be because some frequency tables are "empty")
+  auto wksp = createCTableBuildWksp(MAX_SYMBOL + 1, ft_->max_log);
+
   for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
     tables_[ctx] = FSE_createCTable(MAX_SYMBOL, ft_->logs[ctx]);
-    [[maybe_unused]] std::size_t ret = FSE_buildCTable_wksp(
+    assert(static_cast<long int>(wksp.size()) >= (1 << ft_->max_log));
+
+    [[maybe_unused]] const std::size_t ret = FSE_buildCTable_wksp(
         tables_[ctx], ft_->norm_counts[ctx].data(), MAX_SYMBOL, ft->logs[ctx],
-        wksp.data(), wksp.size());
+        wksp.data(), wksp.size() * sizeof(decltype(wksp)::value_type));
     assert(ret == 0);
   }
 }
@@ -21,7 +26,8 @@ QualityDecoder::QualityDecoder(const FreqTable *ft) : FSE_Quality(ft) {
 
   for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
     tables_[ctx] = FSE_createDTable(ft_->logs[ctx]);
-    [[maybe_unused]] std::size_t ret = FSE_buildDTable_wksp(
+
+    [[maybe_unused]] const std::size_t ret = FSE_buildDTable_wksp(
         tables_[ctx], ft_->norm_counts[ctx].data(), MAX_SYMBOL, ft->logs[ctx],
         wksp.data(), wksp.size() * sizeof(decltype(wksp)::value_type));
     assert(ret == 0);
@@ -129,11 +135,13 @@ void QualityDecoder::decodeRecord(FastqRecord &r) {
   }
 }
 
-FSE_Quality::FreqTable
+std::unique_ptr<FSE_Quality::FreqTable>
 FSE_Quality::calculateFreqTable(const FastqChunk &chunk) {
   /* count frequencies of each symbol in every context */
-  fse_array<std::array<unsigned, ALPHABET_SIZE>> counts{};
-  for (auto &c : counts)
+
+  auto counts =
+      std::make_unique<fse_array<std::array<unsigned, ALPHABET_SIZE>>>();
+  for (auto &c : *counts)
     c.fill(1);
 
   /* the closest symbol is in the upper 2 bits of the context */
@@ -146,7 +154,7 @@ FSE_Quality::calculateFreqTable(const FastqChunk &chunk) {
       unsigned q = static_cast<unsigned>(c) - QUAL_OFFSET;
       assert(q <= MAX_SYMBOL);
 
-      counts.at(ctx).at(q)++;
+      counts->at(ctx).at(q)++;
 
       ctx = calcContext(q, q1, q2);
       q2 = q1;
@@ -154,18 +162,18 @@ FSE_Quality::calculateFreqTable(const FastqChunk &chunk) {
     }
   }
   /* normalize frequencies */
-  FreqTable ft{};
+  auto ft = std::make_unique<FreqTable>();
 
   for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
-    const std::size_t ctx_size =
-        std::accumulate(counts.at(ctx).begin(), counts.at(ctx).end(), std::size_t{});
+    const std::size_t ctx_size = std::accumulate(
+        counts->at(ctx).begin(), counts->at(ctx).end(), std::size_t{});
 
-    ft.logs.at(ctx) = FSE_optimalTableLog(0, ctx_size, MAX_SYMBOL);
+    ft->logs.at(ctx) = FSE_optimalTableLog(0, ctx_size, MAX_SYMBOL);
     [[maybe_unused]] const std::size_t log =
-        FSE_normalizeCount(ft.norm_counts.at(ctx).data(), ft.logs.at(ctx),
-                           counts.at(ctx).data(), ctx_size, MAX_SYMBOL, 1);
-    assert(log == ft.logs.at(ctx));
-    ft.max_log = std::max(ft.max_log, ft.logs.at(ctx));
+        FSE_normalizeCount(ft->norm_counts.at(ctx).data(), ft->logs.at(ctx),
+                           counts->at(ctx).data(), ctx_size, MAX_SYMBOL, 1);
+    assert(log == ft->logs.at(ctx));
+    ft->max_log = std::max(ft->max_log, ft->logs.at(ctx));
   }
   return ft;
 }

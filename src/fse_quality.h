@@ -2,6 +2,7 @@
 #include "defs.h"
 #include "fse_common.h"
 #include <array>
+#include <memory>
 
 namespace fqzcomp28 {
 /* Quality context for the current symbol is:
@@ -56,7 +57,7 @@ public:
 
   FSE_Quality(const FreqTable *ft) : ft_(ft) {}
 
-  static FreqTable calculateFreqTable(const FastqChunk &chunk);
+  static std::unique_ptr<FreqTable> calculateFreqTable(const FastqChunk &chunk);
 
 protected:
   const FreqTable *ft_;

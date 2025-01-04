@@ -18,7 +18,7 @@ TEST_CASE("FSE Quality") {
   const path_t inp_path = "test/data/without_ns.fastq";
 
   FastqChunk chunk = loadFastqFileContents(inp_path);
-  FSE_Quality::FreqTable ft = FSE_Quality::calculateFreqTable(chunk);
+  const auto ft = FSE_Quality::calculateFreqTable(chunk);
 
   const std::vector<char> qualities = getConcatenatedQualities(chunk);
   const std::size_t input_size = chunk.tot_reads_length;
@@ -27,8 +27,8 @@ TEST_CASE("FSE Quality") {
   std::vector<std::byte> output_buf;
   output_buf.resize(Workspace::compressBoundQuality(input_size));
 
-  QualityEncoder encoder(&ft);
-  QualityDecoder decoder(&ft);
+  QualityEncoder encoder(ft.get());
+  QualityDecoder decoder(ft.get());
 
   encoder.startChunk(output_buf);
   for (const auto &r : chunk.records)

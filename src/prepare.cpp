@@ -4,19 +4,19 @@
 namespace fqzcomp28 {
 
 bool operator==(const DatasetMeta &lhs, const DatasetMeta &rhs) {
-  return lhs.first_header == rhs.first_header && lhs.ft_seq == rhs.ft_seq &&
-         lhs.ft_qual == rhs.ft_qual;
+  return lhs.first_header == rhs.first_header && *lhs.ft_seq == *rhs.ft_seq &&
+         *lhs.ft_qual == *rhs.ft_qual;
 }
 
 void DatasetMeta::storeToStream(const DatasetMeta &meta, std::ostream &os) {
-  // so far, only write the header... later will add frequency tables from fse
   const auto hlen = static_cast<readlen_t>(meta.first_header.size());
   os.write(reinterpret_cast<const char *>(&hlen), sizeof(hlen));
   os.write(meta.first_header.data(), hlen);
 
   // TODO: use FSE_writeNCount to store tables compactly
-  os.write(reinterpret_cast<const char *>(&(meta.ft_seq)), sizeof(ft_seq));
-  os.write(reinterpret_cast<const char *>(&(meta.ft_qual)), sizeof(ft_qual));
+  os.write(reinterpret_cast<const char *>(meta.ft_seq.get()), sizeof(*ft_seq));
+  os.write(reinterpret_cast<const char *>(meta.ft_qual.get()),
+           sizeof(*ft_qual));
 }
 
 DatasetMeta DatasetMeta::loadFromStream(std::istream &is) {
@@ -28,9 +28,12 @@ DatasetMeta DatasetMeta::loadFromStream(std::istream &is) {
 
   DatasetMeta meta(first_header);
 
-  is.read(reinterpret_cast<char *>(&(meta.ft_seq)), sizeof(ft_seq));
+  meta.ft_seq = std::make_unique<FSE_Sequence::FreqTable>();
+  is.read(reinterpret_cast<char *>(meta.ft_seq.get()), sizeof(*ft_seq));
   assert(is.good());
-  is.read(reinterpret_cast<char *>(&(meta.ft_qual)), sizeof(ft_qual));
+
+  meta.ft_qual = std::make_unique<FSE_Quality::FreqTable>();
+  is.read(reinterpret_cast<char *>(meta.ft_qual.get()), sizeof(*ft_qual));
   assert(is.good());
   return meta;
 }
