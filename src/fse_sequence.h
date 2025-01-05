@@ -3,14 +3,13 @@
 #include "defs.h"
 #include "fse_common.h"
 #include "sequtils.h"
-#include <array>
 
 namespace fqzcomp28 {
 
 class FSE_Sequence {
 public:
   /**
-   * number of bases in sequence context; increasing leads to
+   * Number of bases in sequence context; increasing leads to
    * slightly higher CR but noticeably longer compression
    */
   constexpr static int CONTEXT_SIZE = 4;
@@ -32,14 +31,14 @@ public:
     return bits2base(getUpperTwoBits(ctx));
   }
 
-  constexpr static int MAX_SYMBOL = base2bits('T');
-  constexpr static int ALPHABET_SIZE = MAX_SYMBOL + 1;
+  constexpr static unsigned MAX_SYMBOL = base2bits('T');
+  constexpr static unsigned ALPHABET_SIZE = MAX_SYMBOL + 1;
 
   /* Initial ctx value from fqzcomp4
    * (but in reverse base order)
    * direct base order is: 0x007616c7
    * "it corresponds to 12-kmer that does not occur in a human genome" (c) */
-  constexpr static int RARE_KMER_LEN = 12;
+  constexpr static unsigned RARE_KMER_LEN = 12;
   constexpr static char INITIAL_CONTEXT_SEQ[RARE_KMER_LEN + 1] = "CTCCACCCTCCT";
   constexpr static char INITIAL_CONTEXT_SEQ_REV[RARE_KMER_LEN + 1] =
       "TCCTCCCACCTC";
@@ -66,31 +65,22 @@ public:
   /* should be positve ? */
   constexpr static unsigned N_MODELS = 1 << (2 * CONTEXT_SIZE);
 
-protected:
-  /** stores some object (e.g., counts) for each model */
-  template <typename T> using fse_array = std::array<T, N_MODELS>;
-
 public:
-  struct FreqTable {
-    /** normalized to sum to power of 2^log */
-    fse_array<std::array<short, ALPHABET_SIZE>> norm_counts;
-    fse_array<unsigned> logs;
-    unsigned max_log;
+  using FreqTableT = FreqTable<N_MODELS, ALPHABET_SIZE>;
+  template <typename T> using fse_array = FreqTableT::fse_array<T>;
 
-    bool operator==(const FreqTable &other) const = default;
-  };
+  FSE_Sequence(const FreqTableT *ft) : ft_(ft) {}
 
-  FSE_Sequence(const FreqTable *ft) : ft_(ft) {}
-
-  static std::unique_ptr<FreqTable> calculateFreqTable(const FastqChunk &chunk);
+  static std::unique_ptr<FreqTableT>
+  calculateFreqTable(const FastqChunk &chunk);
 
 protected:
-  const FreqTable *ft_;
+  const FreqTableT *ft_;
 };
 
 class SequenceEncoder : FSE_Sequence {
 public:
-  SequenceEncoder(const FreqTable *);
+  SequenceEncoder(const FreqTableT *);
   ~SequenceEncoder();
 
   /**
@@ -116,7 +106,7 @@ private:
 
 class SequenceDecoder : FSE_Sequence {
 public:
-  SequenceDecoder(const FreqTable *ft);
+  SequenceDecoder(const FreqTableT *ft);
   ~SequenceDecoder();
 
   /**

@@ -21,7 +21,7 @@ unsigned FSE_Sequence::addBaseLower(unsigned ctx, char base) {
          CONTEXT_MASK;
 }
 
-SequenceEncoder::SequenceEncoder(const FreqTable *ft) : FSE_Sequence(ft) {
+SequenceEncoder::SequenceEncoder(const FreqTableT *ft) : FSE_Sequence(ft) {
   auto wksp = createCTableBuildWksp(MAX_SYMBOL, ft_->max_log);
 
   for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
@@ -39,7 +39,7 @@ SequenceEncoder::~SequenceEncoder() {
     FSE_freeCTable(ct);
 }
 
-SequenceDecoder::SequenceDecoder(const FreqTable *ft) : FSE_Sequence(ft) {
+SequenceDecoder::SequenceDecoder(const FreqTableT *ft) : FSE_Sequence(ft) {
   std::vector<unsigned> wksp(
       FSE_BUILD_DTABLE_WKSP_SIZE_U32(ft->max_log, MAX_SYMBOL));
 
@@ -194,7 +194,7 @@ void SequenceDecoder::decodeRecord(FastqRecord &r, CompressedBuffersSrc &cbs) {
   }
 }
 
-std::unique_ptr<FSE_Sequence::FreqTable>
+std::unique_ptr<FSE_Sequence::FreqTableT>
 FSE_Sequence::calculateFreqTable(const FastqChunk &chunk) {
   /* count frequencies of each symbol in every context */
   fse_array<std::array<unsigned, ALPHABET_SIZE>> counts{};
@@ -217,7 +217,7 @@ FSE_Sequence::calculateFreqTable(const FastqChunk &chunk) {
     }
   }
   /* normalize frequencies */
-  auto ft = std::make_unique<FreqTable>();
+  auto ft = std::make_unique<FreqTableT>();
 
   for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
     const std::size_t ctx_size =

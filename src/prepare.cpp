@@ -28,11 +28,11 @@ DatasetMeta DatasetMeta::loadFromStream(std::istream &is) {
 
   DatasetMeta meta(first_header);
 
-  meta.ft_seq = std::make_unique<FSE_Sequence::FreqTable>();
+  meta.ft_seq = std::make_unique<FSE_Sequence::FreqTableT>();
   is.read(reinterpret_cast<char *>(meta.ft_seq.get()), sizeof(*ft_seq));
   assert(is.good());
 
-  meta.ft_qual = std::make_unique<FSE_Quality::FreqTable>();
+  meta.ft_qual = std::make_unique<FSE_Quality::FreqTableT>();
   is.read(reinterpret_cast<char *>(meta.ft_qual.get()), sizeof(*ft_qual));
   assert(is.good());
   return meta;

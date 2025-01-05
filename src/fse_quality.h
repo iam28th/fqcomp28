@@ -1,7 +1,6 @@
 #pragma once
 #include "defs.h"
 #include "fse_common.h"
-#include <array>
 #include <memory>
 
 namespace fqzcomp28 {
@@ -43,24 +42,17 @@ protected:
     return ctx;
   }
 
-  template <typename T> using fse_array = std::array<T, N_MODELS>;
-
 public:
-  struct FreqTable {
-    /** normalized to sum to power of 2^log */
-    fse_array<std::array<short, ALPHABET_SIZE>> norm_counts;
-    fse_array<unsigned> logs;
-    unsigned max_log;
+  using FreqTableT = FreqTable<N_MODELS, ALPHABET_SIZE>;
+  template <typename T> using fse_array = FreqTableT::fse_array<T>;
 
-    bool operator==(const FreqTable &other) const = default;
-  };
+  FSE_Quality(const FreqTableT *ft) : ft_(ft) {}
 
-  FSE_Quality(const FreqTable *ft) : ft_(ft) {}
-
-  static std::unique_ptr<FreqTable> calculateFreqTable(const FastqChunk &chunk);
+  static std::unique_ptr<FreqTableT>
+  calculateFreqTable(const FastqChunk &chunk);
 
 protected:
-  const FreqTable *ft_;
+  const FreqTableT *ft_;
 
   static unsigned symbolToBits(const char q) {
     return static_cast<unsigned char>(q) - QUAL_OFFSET;
@@ -70,7 +62,7 @@ protected:
 // TODO merge repeating methods with FSE_Sequence
 class QualityEncoder : FSE_Quality {
 public:
-  QualityEncoder(const FreqTable *);
+  QualityEncoder(const FreqTableT *);
   ~QualityEncoder();
 
   /**
@@ -92,7 +84,7 @@ private:
 
 class QualityDecoder : FSE_Quality {
 public:
-  QualityDecoder(const FreqTable *ft);
+  QualityDecoder(const FreqTableT *ft);
   ~QualityDecoder();
 
   /** assumes that record fields readlen and qualp are correctly set */

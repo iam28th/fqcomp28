@@ -3,7 +3,7 @@
 
 namespace fqzcomp28 {
 
-QualityEncoder::QualityEncoder(const FreqTable *ft) : FSE_Quality(ft) {
+QualityEncoder::QualityEncoder(const FreqTableT *ft) : FSE_Quality(ft) {
   // according to commens in fse.h, MAX_SYMBOL should be enough there
   // but according to valgrind it's not;
   // (could be because some frequency tables are "empty")
@@ -20,7 +20,7 @@ QualityEncoder::QualityEncoder(const FreqTable *ft) : FSE_Quality(ft) {
   }
 }
 
-QualityDecoder::QualityDecoder(const FreqTable *ft) : FSE_Quality(ft) {
+QualityDecoder::QualityDecoder(const FreqTableT *ft) : FSE_Quality(ft) {
   std::vector<unsigned> wksp(
       FSE_BUILD_DTABLE_WKSP_SIZE_U32(ft->max_log, MAX_SYMBOL));
 
@@ -135,7 +135,7 @@ void QualityDecoder::decodeRecord(FastqRecord &r) {
   }
 }
 
-std::unique_ptr<FSE_Quality::FreqTable>
+std::unique_ptr<FSE_Quality::FreqTableT>
 FSE_Quality::calculateFreqTable(const FastqChunk &chunk) {
   /* count frequencies of each symbol in every context */
 
@@ -162,7 +162,7 @@ FSE_Quality::calculateFreqTable(const FastqChunk &chunk) {
     }
   }
   /* normalize frequencies */
-  auto ft = std::make_unique<FreqTable>();
+  auto ft = std::make_unique<FreqTableT>();
 
   for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
     const std::size_t ctx_size = std::accumulate(

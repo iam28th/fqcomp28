@@ -29,8 +29,8 @@ struct DatasetMeta {
   /** used for delta-ing the first header in each chunk */
   std::string first_header;
   headers::HeaderFormatSpeciciation header_fmt;
-  std::unique_ptr<FSE_Sequence::FreqTable> ft_seq;
-  std::unique_ptr<FSE_Quality::FreqTable> ft_qual;
+  std::unique_ptr<FSE_Sequence::FreqTableT> ft_seq;
+  std::unique_ptr<FSE_Quality::FreqTableT> ft_qual;
 
   auto n_fields_of_type(headers::FieldType typ) const {
     const auto &types = header_fmt.field_types;
