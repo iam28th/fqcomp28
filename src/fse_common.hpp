@@ -46,7 +46,7 @@ protected:
 
     for (unsigned ctx = 0; ctx < FreqTableT::N_MODELS; ++ctx) {
       tables_[ctx] = FSE_createCTable(FreqTableT::MAX_SYMBOL, ft_->logs[ctx]);
-      assert(static_cast<long int>(wksp.size()) >= (1 << ft_->max_log));
+      assert(narrow_cast<long int>(wksp.size()) >= (1 << ft_->max_log));
 
       [[maybe_unused]] const std::size_t ret = FSE_buildCTable_wksp(
           tables_[ctx], ft_->norm_counts[ctx].data(), FreqTableT::MAX_SYMBOL,

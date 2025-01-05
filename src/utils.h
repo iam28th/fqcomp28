@@ -6,6 +6,15 @@
 
 namespace fqzcomp28 {
 
+/** (c) The C++ Programming Language, section 11.5 */
+template <class Target, class Source> Target narrow_cast(Source v) {
+  auto r = static_cast<Target>(v);
+  // convert the value to the target type
+  if (static_cast<Source>(r) != v) [[unlikely]]
+    throw std::runtime_error("narrow_cast<>() failed");
+  return r;
+}
+
 /**
  * TODO test
  * @brief appends bytes from val to storage
@@ -40,34 +49,5 @@ template <TriviallyCopyable T> auto to_char_ptr(const T *p) {
 template <TriviallyCopyable T> auto to_char_ptr(T *p) {
   return reinterpret_cast<char *>(p);
 }
-
-#if 0
-template <typename T>
-concept signed_integral = std::integral<T> && std::is_signed_v<T>;
-
-template <typename T>
-concept unsigned_integral = std::integral<T> && std::is_unsigned_v<T>;
-
-/* last bit is 0 if value if larger than the previous */
-// TODO: not sure if this is a good encoding strategy,
-// maybe better to just store delta in signed T as is ...
-template <signed_integral T> auto storeDeltaInUnsigned(T prev, T nxt) {
-  using ret_t = std::make_unsigned_t<T>;
-  T delta = std::abs(nxt - prev);
-  assert(static_cast<ret_t>(delta) < (std::numeric_limits<ret_t>::max() >> 1u));
-  ret_t ret = (static_cast<ret_t>(delta) << 1u) + (nxt < prev);
-  return ret;
-};
-
-template <signed_integral T_val, unsigned_integral T_udelta>
-autoreadDeltaFromUnsigned(T_val prev, T_udelta udelta)
-  requires std::is_same_v<T_udelta, std::make_unsigned_t<T_val>>
-{
-  T_val nxt = (udelta & 1u) ? -static_cast<T_val>(udelta >> 1u)
-                            : static_cast<T_val>(udelta >> 1u);
-  nxt += prev;
-  return nxt;
-}
-#endif
 
 }; // namespace fqzcomp28

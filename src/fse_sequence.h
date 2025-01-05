@@ -1,7 +1,7 @@
 #pragma once
 #include "compressed_buffers.h"
 #include "defs.h"
-#include "fse_common.h"
+#include "fse_common.hpp"
 #include "sequtils.h"
 
 namespace fqzcomp28 {

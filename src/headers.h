@@ -11,12 +11,12 @@ namespace fqzcomp28 {
 
 namespace headers {
 
-/**
- * how we parse & store header segments
- * TODO: other special fields, e.g. for index sequence
- */
 constexpr std::size_t FIELDLEN_MAX = 255;
 
+/**
+ * How we parse & store header segments
+ * TODO: other special fields, e.g. for index sequence, length, ...
+ */
 enum class FieldType { NUMERIC = 0, STRING };
 
 using string_t = std::string_view;
@@ -26,7 +26,7 @@ using field_data_t = std::variant<numeric_t, string_t>;
 field_data_t fieldFromAscii(std::string_view::iterator s,
                             std::string_view::iterator e, FieldType);
 
-/** describes the structure of headers */
+/** Describes the structure of headers */
 struct HeaderFormatSpeciciation {
   HeaderFormatSpeciciation() = default;
 
@@ -35,7 +35,7 @@ struct HeaderFormatSpeciciation {
   auto n_fields() const { return field_types.size(); }
 
   /**
-   * fills specification (i.e., number and types of fields) from
+   * Fills specification (i.e., number and types of fields) from
    * example header
    */
   static HeaderFormatSpeciciation fromHeader(const std::string_view header);
@@ -66,7 +66,7 @@ public:
 
   /** helper struct to load original sizes into during decompression */
   struct sizes {
-    uint64_t isDifferentFlag, content, contentLength;
+    uint32_t isDifferentFlag, content, contentLength;
 
     bool operator==(const sizes &) const = default;
   };
@@ -95,7 +95,7 @@ struct FieldStorageSrc : public FieldStorage {
     std::size_t isDifferentPos = 0, contentPos = 0, contentLengthPos = 0;
   } index;
   /**
-   * @return number of bytes written to `dst`
+   * @return Number of bytes written to `dst`
    */
   unsigned loadNextString(char *dst, string_t &prev_fal);
   unsigned loadNextNumeric(char *dst, numeric_t &prev_val);
@@ -106,7 +106,7 @@ struct FieldStorageSrc : public FieldStorage {
   }
 };
 
-/** holds a certain field of multiple headers after general compression */
+/** Holds a certain field of multiple headers after general compression */
 using CompressedFieldStorage = FieldStorage;
 
 } // namespace headers

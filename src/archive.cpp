@@ -69,19 +69,19 @@ void Archive::writeBlock(const CompressedBuffersDst &cb) {
 bool Archive::readBlock(CompressedBuffersSrc &cb) {
   cb.clear();
 
-  cb.original_size.total = readInteger<uint64_t>();
+  cb.original_size.total = readInteger<uint32_t>();
   if (fs_.eof())
     return false;
 
-  cb.original_size.n_records = readInteger<uint64_t>();
+  cb.original_size.n_records = readInteger<uint32_t>();
 
-  cb.original_size.readlens = readInteger<uint64_t>();
+  cb.original_size.readlens = readInteger<uint32_t>();
   readBytes(cb.compressed_readlens);
 
-  cb.original_size.n_count = readInteger<uint64_t>();
+  cb.original_size.n_count = readInteger<uint32_t>();
   readBytes(cb.compressed_n_count);
 
-  cb.original_size.n_pos = readInteger<uint64_t>();
+  cb.original_size.n_pos = readInteger<uint32_t>();
   readBytes(cb.compressed_n_pos);
 
   readBytes(cb.seq);
@@ -97,17 +97,17 @@ bool Archive::readBlock(CompressedBuffersSrc &cb) {
     auto &field_cdata = cb.compressed_header_fields[i];
 
     if (meta_.header_fmt.field_types[i] == headers::FieldType::STRING) {
-      field_original_size.isDifferentFlag = readInteger<uint64_t>();
+      field_original_size.isDifferentFlag = readInteger<uint32_t>();
       readBytes(field_cdata.isDifferentFlag);
 
-      field_original_size.content = readInteger<uint64_t>();
+      field_original_size.content = readInteger<uint32_t>();
       readBytes(field_cdata.content);
 
-      field_original_size.contentLength = readInteger<uint64_t>();
+      field_original_size.contentLength = readInteger<uint32_t>();
       readBytes(field_cdata.contentLength);
 
     } else {
-      field_original_size.content = readInteger<uint64_t>();
+      field_original_size.content = readInteger<uint32_t>();
       readBytes(field_cdata.content);
     }
   }
@@ -116,14 +116,14 @@ bool Archive::readBlock(CompressedBuffersSrc &cb) {
 }
 
 void Archive::writeBytes(const std::vector<std::byte> &bytes) {
-  const auto sz = static_cast<std::streamsize>(bytes.size());
+  const auto sz = narrow_cast<uint32_t>(bytes.size());
   writeInteger(sz);
   fs_.write(to_char_ptr(bytes.data()), sz);
 }
 
 void Archive::readBytes(std::vector<std::byte> &bytes) {
-  const auto sz = readInteger<std::streamsize>();
-  bytes.resize(static_cast<std::size_t>(sz));
+  const auto sz = readInteger<uint32_t>();
+  bytes.resize(sz);
   fs_.read(to_char_ptr(bytes.data()), sz);
 }
 

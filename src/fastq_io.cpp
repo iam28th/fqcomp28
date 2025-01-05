@@ -1,4 +1,5 @@
 #include "fastq_io.h"
+#include "utils.h"
 #include <cassert>
 #include <cstring>
 #include <fstream>
@@ -33,7 +34,7 @@ bool FastqReader::readNextChunk(FastqChunk &chunk) {
   buf += partial1_.size();
   partial1_.clear();
 
-  ifs1_.read(buf, static_cast<std::streamsize>(to_read));
+  ifs1_.read(buf, narrow_cast<std::streamsize>(to_read));
   assert(ifs1_);
 
   /* parse data to find last fully loaded record */
@@ -68,7 +69,7 @@ std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
     if (bytes_processed == size) {
       const char *beg = chunk.raw_data.data();
       return (ln == 0 ? chunk.raw_data.size()
-                      : static_cast<std::size_t>(rec.headerp - beg));
+                      : narrow_cast<std::size_t>(rec.headerp - beg));
     }
 
     char *line_end = static_cast<char *>(
@@ -76,24 +77,22 @@ std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
 
     if (line_end == nullptr) {
       const char *beg = chunk.raw_data.data();
-      return static_cast<std::size_t>(ln == 0 ? line_start - beg
+      return narrow_cast<std::size_t>(ln == 0 ? line_start - beg
                                               : rec.headerp - beg);
     }
 
-    const auto line_length = static_cast<unsigned>(line_end - line_start);
-    // TODO: once I use delta to store readlens, will have to
-    // compare with (max >> 1u)
+    const auto line_length = narrow_cast<readlen_t>(line_end - line_start);
     assert(line_length <= std::numeric_limits<readlen_t>::max());
 
     switch (ln) {
     case 0:
       rec.headerp = line_start;
-      rec.header_length = static_cast<readlen_t>(line_length);
+      rec.header_length = line_length;
       chunk.headers_length += line_length;
       break;
     case 1:
       rec.seqp = line_start;
-      rec.length = static_cast<readlen_t>(line_length);
+      rec.length = line_length;
       chunk.tot_reads_length += line_length;
       break;
     case 2: /* skip fastq quality header */
@@ -118,7 +117,7 @@ FastqWriter::FastqWriter(std::string mates1) : ofs1_(mates1) {}
 
 void FastqWriter::writeChunk(FastqChunk const &chunk) {
   ofs1_.write(chunk.raw_data.data(),
-              static_cast<std::streamsize>(chunk.raw_data.size()));
+              narrow_cast<std::streamsize>(chunk.raw_data.size()));
 }
 
 } // namespace fqzcomp28

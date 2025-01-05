@@ -11,13 +11,13 @@ struct cb_original_sizes_t {
   /* how many bytes to allocate for each header field */
   std::vector<headers::FieldStorage::sizes> header_fields;
   /* how many bytes to allocate for raw data */
-  uint64_t total;
+  uint32_t total;
   /* how many bytes to allocate for CompressedBuffers::readlens */
-  uint64_t readlens;
+  uint32_t readlens;
   /* number of fastq records in chunk */
-  uint64_t n_records;
+  uint32_t n_records;
 
-  uint64_t n_count, n_pos;
+  uint32_t n_count, n_pos;
 
   bool operator==(const cb_original_sizes_t &) const = default;
 

@@ -30,7 +30,6 @@ void CompressionWorkspace::encodeChunk(FastqChunk &chunk,
     qual_encoder.encodeRecord(r);
   }
 
-  // const std::size_t compressed_size_seq = seq_coder.endChunk();
   const std::size_t compressed_size_seq = seq_encoder.endChunk();
   const std::size_t compressed_size_qual = qual_encoder.endChunk();
 
@@ -40,8 +39,8 @@ void CompressionWorkspace::encodeChunk(FastqChunk &chunk,
   comp_stats_.seq += compressed_size_seq;
   comp_stats_.qual += compressed_size_qual;
 
-  cbs.original_size.n_records = chunk.records.size();
-  cbs.original_size.total = chunk.raw_data.size();
+  cbs.original_size.n_records = narrow_cast<uint32_t>(chunk.records.size());
+  cbs.original_size.total = narrow_cast<uint32_t>(chunk.raw_data.size());
   compressMiscBuffers(cbs);
 }
 
@@ -175,13 +174,13 @@ void CompressionWorkspace::prepareBuffersForEncoding(
 
 void CompressionWorkspace::compressMiscBuffers(CompressedBuffersDst &cbs) {
   // TODO: use narrow/checked_cast
-  cbs.original_size.readlens = static_cast<uint32_t>(cbs.readlens.size());
+  cbs.original_size.readlens = narrow_cast<unsigned>(cbs.readlens.size());
   comp_stats_.readlens += compressBuffer(cbs.compressed_readlens, cbs.readlens);
 
-  cbs.original_size.n_count = static_cast<uint32_t>(cbs.n_count.size());
+  cbs.original_size.n_count = narrow_cast<unsigned>(cbs.n_count.size());
   comp_stats_.n_count += compressBuffer(cbs.compressed_n_count, cbs.n_count);
 
-  cbs.original_size.n_pos = static_cast<uint32_t>(cbs.n_pos.size());
+  cbs.original_size.n_pos = narrow_cast<unsigned>(cbs.n_pos.size());
   comp_stats_.n_pos += compressBuffer(cbs.compressed_n_pos, cbs.n_pos);
 
   for (std::size_t i = 0, E = fmt_.n_fields(); i < E; ++i) {
@@ -198,14 +197,16 @@ void CompressionWorkspace::compressMiscBuffers(CompressedBuffersDst &cbs) {
       field_csize +=
           compressBuffer(field_cdata.contentLength, field_data.contentLength);
 
-      original_size.isDifferentFlag = field_data.isDifferentFlag.size();
-      original_size.content = field_data.content.size();
-      original_size.contentLength = field_data.contentLength.size();
+      original_size.isDifferentFlag =
+          narrow_cast<uint32_t>(field_data.isDifferentFlag.size());
+      original_size.content = narrow_cast<uint32_t>(field_data.content.size());
+      original_size.contentLength =
+          narrow_cast<uint32_t>(field_data.contentLength.size());
 
     } else { /* NUMERIC */
       field_csize += compressBuffer(field_cdata.content, field_data.content);
 
-      original_size.content = field_data.content.size();
+      original_size.content = narrow_cast<uint32_t>(field_data.content.size());
     }
   }
 }

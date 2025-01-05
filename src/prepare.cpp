@@ -1,5 +1,6 @@
 #include "prepare.h"
 #include "fastq_io.h"
+#include "utils.h"
 
 namespace fqzcomp28 {
 
@@ -9,7 +10,7 @@ bool operator==(const DatasetMeta &lhs, const DatasetMeta &rhs) {
 }
 
 void DatasetMeta::storeToStream(const DatasetMeta &meta, std::ostream &os) {
-  const auto hlen = static_cast<readlen_t>(meta.first_header.size());
+  const auto hlen = narrow_cast<readlen_t>(meta.first_header.size());
   os.write(reinterpret_cast<const char *>(&hlen), sizeof(hlen));
   os.write(meta.first_header.data(), hlen);
 

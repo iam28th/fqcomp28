@@ -4,7 +4,6 @@ add_library(fqzcomp28Core OBJECT
     app.cpp
     archive.cpp
     compressed_buffers.cpp
-    fse_common.cpp
     fse_quality.cpp
     fastq_io.cpp
     fse_sequence.cpp
@@ -35,6 +34,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # public so that fqzcomp28 executable and unit_tests
     # also have these flags
     target_compile_options(fqzcomp28Core PUBLIC
+        -Werror
         -Wall
         -Wextra
         -Wconversion

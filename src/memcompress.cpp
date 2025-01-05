@@ -4,6 +4,7 @@
 
 #include "libbsc/filters.h"
 #include "libbsc/libbsc.h"
+#include "utils.h"
 
 /// copy-paste from libbsc/bsc.cpp
 int paramBlockSize = 64 * 1024 * 1024;
@@ -39,14 +40,14 @@ namespace fqzcomp28 {
 
 std::size_t memcompress(std::byte *dst, const std::byte *src,
                         const std::size_t src_size) {
-  int ret = bsc_init(paramFeatures());
+  [[maybe_unused]] int ret = bsc_init(paramFeatures());
   assert(ret == LIBBSC_NO_ERROR);
   int compressedSize =
       bsc_compress(reinterpret_cast<const unsigned char *>(src),
                    reinterpret_cast<unsigned char *>(dst),
-                   static_cast<int>(src_size), paramLZPHashSize, paramLZPMinLen,
+                   narrow_cast<int>(src_size), paramLZPHashSize, paramLZPMinLen,
                    paramBlockSorter, paramCoder, paramFeatures());
-  return static_cast<std::size_t>(compressedSize);
+  return narrow_cast<std::size_t>(compressedSize);
 }
 
 std::size_t memdecompress(std::byte *dst, const std::size_t dst_size,
@@ -54,12 +55,12 @@ std::size_t memdecompress(std::byte *dst, const std::size_t dst_size,
   if (src_size == 0) [[unlikely]]
     return 0;
 
-  int ret = bsc_init(paramFeatures());
+  [[maybe_unused]] int ret = bsc_init(paramFeatures());
   assert(ret == LIBBSC_NO_ERROR);
   ret = bsc_decompress(reinterpret_cast<const unsigned char *>(src),
-                       static_cast<int>(src_size),
+                       narrow_cast<int>(src_size),
                        reinterpret_cast<unsigned char *>(dst),
-                       static_cast<int>(dst_size), paramFeatures());
+                       narrow_cast<int>(dst_size), paramFeatures());
   assert(ret == LIBBSC_NO_ERROR);
   return dst_size;
 }

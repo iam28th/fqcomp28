@@ -1,6 +1,6 @@
 #pragma once
 #include "defs.h"
-#include "fse_common.h"
+#include "fse_common.hpp"
 #include <memory>
 
 namespace fqzcomp28 {
