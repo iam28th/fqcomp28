@@ -1,5 +1,4 @@
 #include "fse_quality.h"
-#include <numeric>
 
 namespace fqzcomp28 {
 
@@ -151,7 +150,7 @@ FSE_Quality::calculateFreqTable(const FastqChunk &chunk) {
 
     for (char c : r.qual()) {
       assert(static_cast<char>(static_cast<unsigned>(c)) == c);
-      unsigned q = static_cast<unsigned>(c) - QUAL_OFFSET;
+      const unsigned q = static_cast<unsigned>(c) - QUAL_OFFSET;
       assert(q <= MAX_SYMBOL);
 
       counts->at(ctx).at(q)++;
@@ -161,20 +160,7 @@ FSE_Quality::calculateFreqTable(const FastqChunk &chunk) {
       q1 = q;
     }
   }
-  /* normalize frequencies */
-  auto ft = std::make_unique<FreqTableT>();
 
-  for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
-    const std::size_t ctx_size = std::accumulate(
-        counts->at(ctx).begin(), counts->at(ctx).end(), std::size_t{});
-
-    ft->logs.at(ctx) = FSE_optimalTableLog(0, ctx_size, MAX_SYMBOL);
-    [[maybe_unused]] const std::size_t log =
-        FSE_normalizeCount(ft->norm_counts.at(ctx).data(), ft->logs.at(ctx),
-                           counts->at(ctx).data(), ctx_size, MAX_SYMBOL, 1);
-    assert(log == ft->logs.at(ctx));
-    ft->max_log = std::max(ft->max_log, ft->logs.at(ctx));
-  }
-  return ft;
+  return makeNormalizedFreqTable<FreqTableT>(*counts);
 }
 }; // namespace fqzcomp28

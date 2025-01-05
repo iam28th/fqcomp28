@@ -1,7 +1,6 @@
 #include "fse_sequence.h"
 #include "sequtils.h"
 #include "utils.h"
-#include <numeric>
 #include <ranges>
 
 namespace fqzcomp28 {
@@ -216,21 +215,8 @@ FSE_Sequence::calculateFreqTable(const FastqChunk &chunk) {
       ctx = addSymUpper(ctx, symbol);
     }
   }
-  /* normalize frequencies */
-  auto ft = std::make_unique<FreqTableT>();
 
-  for (unsigned ctx = 0; ctx < N_MODELS; ++ctx) {
-    const std::size_t ctx_size =
-        std::accumulate(counts[ctx].begin(), counts[ctx].end(), std::size_t{});
-
-    ft->logs[ctx] = FSE_optimalTableLog(0, ctx_size, MAX_SYMBOL);
-    [[maybe_unused]] const std::size_t log =
-        FSE_normalizeCount(ft->norm_counts[ctx].data(), ft->logs[ctx],
-                           counts[ctx].data(), ctx_size, MAX_SYMBOL, 1);
-    assert(log == ft->logs[ctx]);
-    ft->max_log = std::max(ft->max_log, ft->logs[ctx]);
-  }
-  return ft;
+  return makeNormalizedFreqTable<FreqTableT>(counts);
 }
 
 } // namespace fqzcomp28
