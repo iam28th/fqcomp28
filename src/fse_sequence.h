@@ -86,6 +86,9 @@ public:
   /**
    * Writes sequence to bitStream_, skipping Ns;
    * count and positions of Ns are written into cbs
+   *
+   * @param r - Record to encode; it's not const because its contents
+   * are possibly modified by replacing N with one of ACGT
    */
   void encodeRecord(FastqRecord &rec, CompressedBuffersDst &cbs);
 };

@@ -20,7 +20,11 @@ unsigned FSE_Sequence::addBaseLower(unsigned ctx, char base) {
          CONTEXT_MASK;
 }
 
-void SequenceEncoder::encodeRecord(FastqRecord &r, CompressedBuffersDst &cbs) {
+/**
+ * Replaces all occurences of 'N' with 'A' to simplify FSE coding;
+ * stores 'N' positions and counts in cbs
+ */
+static void replaceAndEncodeNs(FastqRecord &r, CompressedBuffersDst &cbs) {
   readlen_t n_count = 0;
 
   readlen_t prev_n_pos = 0;
@@ -29,13 +33,17 @@ void SequenceEncoder::encodeRecord(FastqRecord &r, CompressedBuffersDst &cbs) {
       n_count++;
       const readlen_t delta = i - prev_n_pos;
       storeAsBytes(delta, cbs.n_pos);
-      // TODO 'most likely' base instead of always A
+      // TODO replace with 'most likely' base instead of always A
       r.seqp[i] = 'A';
       prev_n_pos = i;
     }
   }
 
   storeAsBytes(n_count, cbs.n_count);
+}
+
+void SequenceEncoder::encodeRecord(FastqRecord &r, CompressedBuffersDst &cbs) {
+  replaceAndEncodeNs(r, cbs);
 
   unsigned ctx = INITIAL_CONTEXT & CONTEXT_MASK;
 
@@ -52,7 +60,7 @@ void SequenceEncoder::encodeRecord(FastqRecord &r, CompressedBuffersDst &cbs) {
   const char *first_base_with_partial_ctx =
       r.seqp + (r.length > CONTEXT_SIZE ? CONTEXT_SIZE - 1 : r.length - 1);
 
-  assert(*(r.seqp - 1) == '\n'); /* it's safe to use this address becuase it's
+  assert(*(r.seqp - 1) == '\n'); /* it's safe to use this address becuase we're
                                     in a block of fastq data */
 
   /* encode the part which has all context formed by r */
