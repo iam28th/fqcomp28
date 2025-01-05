@@ -66,11 +66,11 @@ void printReport(const InputStats &inp, const CompressedStats &comp,
       {"n_count", comp.n_count}, {"n_pos", comp.n_pos},
       {"qual", comp.qual},
   };
-  for (auto [name, csize] : cstreams)
+  for (const auto &[name, csize] : cstreams)
     print_cstream(name, csize);
 
   for (std::size_t i = 0, E = comp.header_fields.size(); i < E; ++i) {
-    std::string name = "header_field_" + std::to_string(i + 1);
+    const std::string name = "header_field_" + std::to_string(i + 1);
     print_cstream(name, comp.header_fields[i]);
   }
   print_cstream("meta_seq", meta.sequence());

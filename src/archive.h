@@ -13,7 +13,7 @@ class Archive {
 
 public:
   /** Creates Archive to read compressed data from an existing fqzcomp28 file */
-  Archive(const path_t archive_path);
+  explicit Archive(const path_t archive_path);
 
   /**
    * @brief Creates an archive to write compressed data to

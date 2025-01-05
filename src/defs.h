@@ -28,9 +28,11 @@ public:
   char *seqp, *qualp, *headerp;
   readlen_t length, header_length;
 
-  auto header() const { return std::string_view(headerp, header_length); }
-  auto seq() const { return std::string_view(seqp, length); }
-  auto qual() const { return std::string_view(qualp, length); }
+  [[nodiscard]] auto header() const {
+    return std::string_view(headerp, header_length);
+  }
+  [[nodiscard]] auto seq() const { return std::string_view(seqp, length); }
+  [[nodiscard]] auto qual() const { return std::string_view(qualp, length); }
 };
 
 struct FastqChunk {

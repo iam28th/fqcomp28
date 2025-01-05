@@ -80,7 +80,7 @@ FSE_Quality::calculateFreqTable(const FastqChunk &chunk) {
     unsigned ctx = calcContext(0, 0, 0); // reset at the beginning of a record
     unsigned q1 = 0, q2 = 0;
 
-    for (char c : r.qual()) {
+    for (const char c : r.qual()) {
       assert(static_cast<char>(static_cast<unsigned>(c)) == c);
       const unsigned q = static_cast<unsigned>(c) - QUAL_OFFSET;
       assert(q <= MAX_SYMBOL);

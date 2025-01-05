@@ -27,7 +27,8 @@ if [[ $ct_code -ne 0 ]]; then
         echo $MESSAGE
 else
         # TODO: better file selection & run only on files that were changed since divergance
-        run-clang-tidy -p build -j "$JOBS" -quiet src/*.cpp  || exit 1
+        # -Wno-unknown-warning-option is needed because clang-tidy doesn't know about -Wnrvo
+        run-clang-tidy -p build -j "$JOBS" -quiet src/*.cpp -extra-arg=-Wno-unknown-warning-option  || exit 1
 fi
 
 cd "$CMAKE_BINARY_DIR/test" && make -j "$JOBS" && ctest --schedule-random --parallel "$JOBS" || exit 1

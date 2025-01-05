@@ -26,8 +26,7 @@ int startProgram(int argc, char **argv) {
 }
 
 void processReads() {
-
-  const auto set = Settings::getInstance();
+  auto *const set = Settings::getInstance();
   const auto mates1 = set->non_storable.mates1;
 
   Archive archive(set->non_storable.archive, mates1);
@@ -57,7 +56,7 @@ void processReads() {
 }
 
 void processArchiveParts() {
-  const auto set = Settings::getInstance();
+  auto *const set = Settings::getInstance();
   Archive archive(set->non_storable.archive);
   FastqWriter writer(set->non_storable.mates1);
 

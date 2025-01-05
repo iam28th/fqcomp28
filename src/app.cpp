@@ -15,8 +15,8 @@ void addOptions(CLI::App *app) {
   app->option_defaults()->always_capture_default();
   app->set_help_all_flag("--help-all", "Expand all help");
 
-  auto c = createCompressSubcommand(app);
-  auto d = createDecompressSubcommand(app);
+  auto *c = createCompressSubcommand(app);
+  auto *d = createDecompressSubcommand(app);
 
   c->parse_complete_callback(processReads);
   d->parse_complete_callback(fqzcomp28::processArchiveParts);
@@ -25,7 +25,7 @@ void addOptions(CLI::App *app) {
 
 namespace {
 void addCommonOptions(CLI::App *subcommand) {
-  auto set = fqzcomp28::Settings::getInstance();
+  auto *set = fqzcomp28::Settings::getInstance();
   subcommand->add_option("-t,--threads", set->non_storable.n_threads,
                          "number of processing threads");
   subcommand->add_flag("--verbose", set->non_storable.verbose,
@@ -33,8 +33,8 @@ void addCommonOptions(CLI::App *subcommand) {
 }
 
 CLI::App *createCompressSubcommand(CLI::App *app) {
-  auto set = fqzcomp28::Settings::getInstance();
-  auto cmd = app->add_subcommand("c", "run compression");
+  auto *set = fqzcomp28::Settings::getInstance();
+  auto *cmd = app->add_subcommand("c", "run compression");
 
   cmd->add_option("--i1,--input1", set->non_storable.mates1,
                   "path to a fastq file with first mates")
@@ -51,15 +51,15 @@ CLI::App *createCompressSubcommand(CLI::App *app) {
 }
 
 CLI::App *createDecompressSubcommand(CLI::App *app) {
-  auto set = fqzcomp28::Settings::getInstance();
-  auto cmd = app->add_subcommand("d", "run decompression");
+  auto *set = fqzcomp28::Settings::getInstance();
+  auto *cmd = app->add_subcommand("d", "run decompression");
 
   cmd->add_option("-i,--input", set->non_storable.archive,
                   "path to an archive to decompress")
       ->check(CLI::ExistingFile)
       ->required();
 
-  const auto o1 = cmd->add_option(
+  auto *o1 = cmd->add_option(
       "--o1,--output1", set->non_storable.mates1,
       "path to output mates1 (if both --o1 and --o2 are ommitted, "
       "prints to stdout)");

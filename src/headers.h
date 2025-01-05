@@ -7,9 +7,7 @@
 #include <variant>
 #include <vector>
 
-namespace fqzcomp28 {
-
-namespace headers {
+namespace fqzcomp28::headers {
 
 constexpr std::size_t FIELDLEN_MAX = 255;
 
@@ -32,7 +30,7 @@ struct HeaderFormatSpeciciation {
 
   std::vector<FieldType> field_types;
   std::vector<char> separators;
-  auto n_fields() const { return field_types.size(); }
+  [[nodiscard]] auto n_fields() const { return field_types.size(); }
 
   /**
    * Fills specification (i.e., number and types of fields) from
@@ -97,7 +95,7 @@ struct FieldStorageSrc : public FieldStorage {
   /**
    * @return Number of bytes written to `dst`
    */
-  unsigned loadNextString(char *dst, string_t &prev_fal);
+  unsigned loadNextString(char *dst, string_t &prev_val);
   unsigned loadNextNumeric(char *dst, numeric_t &prev_val);
 
   void clear() override {
@@ -109,5 +107,4 @@ struct FieldStorageSrc : public FieldStorage {
 /** Holds a certain field of multiple headers after general compression */
 using CompressedFieldStorage = FieldStorage;
 
-} // namespace headers
-} // namespace fqzcomp28
+} // namespace fqzcomp28::headers

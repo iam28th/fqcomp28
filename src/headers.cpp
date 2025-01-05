@@ -6,8 +6,7 @@
 #include <cstring>
 #include <stdexcept>
 
-namespace fqzcomp28 {
-namespace headers {
+namespace fqzcomp28::headers {
 
 field_data_t fieldFromAscii(std::string_view::iterator s,
                             std::string_view::iterator e, FieldType typ) {
@@ -27,9 +26,9 @@ header_fields_t fromHeader(const std::string_view header,
                            const HeaderFormatSpeciciation &fmt) {
   header_fields_t fields(fmt.n_fields());
 
-  auto field_start = header.begin() + 1; /* skip '@' */
+  const auto *field_start = header.begin() + 1; /* skip '@' */
   for (std::size_t i = 0, E = fmt.n_fields() - 1; i < E; ++i) {
-    const auto field_end =
+    const auto *field_end =
         std::find(field_start + 1, header.end(), fmt.separators[i]);
 
     fields[i] = fieldFromAscii(field_start, field_end, fmt.field_types[i]);
@@ -46,12 +45,12 @@ HeaderFormatSpeciciation::fromHeader(const std::string_view header) {
   assert(header[0] == '@');
 
   HeaderFormatSpeciciation fmt;
-  auto field_start = header.begin() + 1;
+  const auto *field_start = header.begin() + 1;
 
   for (;;) {
     // TODO: also start a new field when switching between numeric and string ?
-    const auto sep = std::find_if_not(field_start, header.end(),
-                                      [](char c) { return std::isalnum(c); });
+    const auto *sep = std::find_if_not(field_start, header.end(),
+                                       [](char c) { return std::isalnum(c); });
     const std::string_view field(field_start, sep);
 
     if (std::all_of(field.begin(), field.end(),
@@ -132,5 +131,4 @@ unsigned FieldStorageSrc::loadNextNumeric(char *dst, numeric_t &prev_val) {
   assert(res.ec == std::errc());
   return static_cast<unsigned>(res.ptr - dst);
 }
-} // namespace headers
-} // namespace fqzcomp28
+} // namespace fqzcomp28::headers

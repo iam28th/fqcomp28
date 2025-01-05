@@ -35,7 +35,7 @@ public:
   }
 
 public:
-  Workspace(const DatasetMeta *meta);
+  explicit Workspace(const DatasetMeta *meta);
 
   friend struct WorkspaceTester;
 
@@ -59,7 +59,7 @@ class CompressionWorkspace : public Workspace {
 public:
   friend struct WorkspaceTester;
 
-  CompressionWorkspace(const DatasetMeta *meta)
+  explicit CompressionWorkspace(const DatasetMeta *meta)
       : Workspace(meta), seq_encoder(meta->ft_seq.get()),
         qual_encoder(meta->ft_qual.get()) {
     comp_stats_.header_fields.resize(fmt_.n_fields());
@@ -68,7 +68,7 @@ public:
   /** Encodes reads into cbs, allocating memory in cbs as needed */
   void encodeChunk(FastqChunk &, CompressedBuffersDst &cbs);
 
-  const CompressedStats &stats() const { return comp_stats_; }
+  [[nodiscard]] const CompressedStats &stats() const { return comp_stats_; }
 
 private:
   /** Reserves enough space in `cbs` to encode `chunk` */
@@ -104,7 +104,7 @@ class DecompressionWorkspace : public Workspace {
 public:
   friend struct WorkspaceTester;
 
-  DecompressionWorkspace(const DatasetMeta *meta)
+  explicit DecompressionWorkspace(const DatasetMeta *meta)
       : Workspace(meta), seq_decoder(meta->ft_seq.get()),
         qual_decoder(meta->ft_qual.get()) {}
 

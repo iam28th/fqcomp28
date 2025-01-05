@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <filesystem>
 
 namespace fqzcomp28 {
@@ -37,14 +38,16 @@ public:
     Command cmd = Command::TEST;
   } non_storable;
 
-  bool is_pe() const { return !non_storable.mates2.empty(); }
+  [[nodiscard]] bool is_pe() const { return !non_storable.mates2.empty(); }
 
-  std::size_t reading_chunk_size() const {
-    return non_storable.read_chunk_size_Mb * 1024 * 1024;
+  [[nodiscard]] std::size_t reading_chunk_size() const {
+    return static_cast<std::size_t>(non_storable.read_chunk_size_Mb) * 1024 *
+           1024;
   }
 
-  std::size_t sample_chunk_size() const {
-    return non_storable.sample_chunk_size_Mb * 1024 * 1024;
+  [[nodiscard]] std::size_t sample_chunk_size() const {
+    return static_cast<std::size_t>(non_storable.sample_chunk_size_Mb) * 1024 *
+           1024;
   }
 };
 } // namespace fqzcomp28

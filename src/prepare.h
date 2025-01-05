@@ -15,12 +15,12 @@ struct DatasetMeta {
 
   DatasetMeta() = default;
 
-  DatasetMeta(const std::string_view header)
+  explicit DatasetMeta(const std::string_view header)
       : first_header(header),
         header_fmt(
             headers::HeaderFormatSpeciciation::fromHeader(first_header)) {}
 
-  DatasetMeta(const FastqChunk &chunk)
+  explicit DatasetMeta(const FastqChunk &chunk)
       : first_header(chunk.records.front().header()),
         header_fmt(headers::HeaderFormatSpeciciation::fromHeader(first_header)),
         ft_seq(FSE_Sequence::calculateFreqTable(chunk)),
@@ -32,26 +32,28 @@ struct DatasetMeta {
   std::unique_ptr<FSE_Sequence::FreqTableT> ft_seq;
   std::unique_ptr<FSE_Quality::FreqTableT> ft_qual;
 
-  auto n_fields_of_type(headers::FieldType typ) const {
+  [[nodiscard]] auto n_fields_of_type(headers::FieldType typ) const {
     const auto &types = header_fmt.field_types;
     return std::count(types.begin(), types.end(), typ);
   }
 
   /** @return how many bytes are needed to store metadata in archive */
-  std::size_t size() const { return headers() + sequence() + quality(); };
+  [[nodiscard]] std::size_t size() const {
+    return headers() + sequence() + quality();
+  };
 
   static void storeToStream(const DatasetMeta &, std::ostream &);
   static DatasetMeta loadFromStream(std::istream &);
 
-  std::size_t headers() const {
+  [[nodiscard]] std::size_t headers() const {
     return sizeof(readlen_t) + first_header.length();
   }
-  std::size_t sequence() const { return sizeof(*ft_seq); }
-  std::size_t quality() const { return sizeof(*ft_qual); }
+  [[nodiscard]] std::size_t sequence() const { return sizeof(*ft_seq); }
+  [[nodiscard]] std::size_t quality() const { return sizeof(*ft_qual); }
 };
 
 bool operator==(const DatasetMeta &lhs, const DatasetMeta &rhs);
 
-DatasetMeta analyzeDataset(path_t fastq_file, std::size_t sample_syte_bytes);
+DatasetMeta analyzeDataset(path_t fastq_file, std::size_t sample_size_bytes);
 
 } // namespace fqzcomp28

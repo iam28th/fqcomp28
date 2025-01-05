@@ -12,15 +12,15 @@ public:
    * Number of bases in sequence context; increasing leads to
    * slightly higher CR but noticeably longer compression
    */
-  constexpr static int CONTEXT_SIZE = 4;
-  constexpr static unsigned CONTEXT_MASK = (1 << (CONTEXT_SIZE * 2)) - 1;
+  constexpr static unsigned CONTEXT_SIZE = 4;
+  constexpr static unsigned CONTEXT_MASK = (1U << (CONTEXT_SIZE * 2)) - 1;
 
   /** records base (in 2bit representation) in the lower 2 bits of ctx */
   static unsigned addBaseLower(unsigned ctx, char base);
 
   /** records base (in 2bit reperesentation) in the upper 2 bits of ctx */
   constexpr static unsigned addSymUpper(unsigned ctx, unsigned sym) {
-    return (ctx >> 2) + (sym << (2 * (CONTEXT_SIZE - 1)));
+    return (ctx >> 2U) + (sym << (2 * (CONTEXT_SIZE - 1)));
   }
 
   constexpr static unsigned getUpperTwoBits(unsigned ctx) {
@@ -45,7 +45,7 @@ public:
   constexpr static unsigned INITIAL_CONTEXT = []() constexpr {
     unsigned ctx = 0;
     auto add_base = [&ctx](int idx) {
-      ctx = (ctx << 2) + base2bits(INITIAL_CONTEXT_SEQ[idx]);
+      ctx = (ctx << 2U) + base2bits(INITIAL_CONTEXT_SEQ[idx]);
     };
     add_base(11);
     add_base(10);
@@ -63,7 +63,7 @@ public:
   }() >> (RARE_KMER_LEN * 2 - CONTEXT_SIZE * 2);
 
   /* should be positve ? */
-  constexpr static unsigned N_MODELS = 1 << (2 * CONTEXT_SIZE);
+  constexpr static unsigned N_MODELS = 1U << (2 * CONTEXT_SIZE);
 
 public:
   using FreqTableT = FreqTable<N_MODELS, ALPHABET_SIZE>;
@@ -80,7 +80,7 @@ public:
 class SequenceEncoder : FSE_Sequence,
                         public FSE_Encoder<FSE_Sequence::FreqTableT> {
 public:
-  SequenceEncoder(const FreqTableT *ft)
+  explicit SequenceEncoder(const FreqTableT *ft)
       : FSE_Encoder<FSE_Sequence::FreqTableT>(ft) {};
 
   /**
@@ -96,7 +96,7 @@ public:
 class SequenceDecoder : FSE_Sequence,
                         public FSE_Decoder<FSE_Sequence::FreqTableT> {
 public:
-  SequenceDecoder(const FreqTableT *ft)
+  explicit SequenceDecoder(const FreqTableT *ft)
       : FSE_Decoder<FSE_Sequence::FreqTableT>(ft) {}
 
   /**

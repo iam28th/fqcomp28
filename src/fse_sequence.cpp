@@ -16,7 +16,7 @@ constexpr std::array<unsigned, 128> base2bits_arr = []() {
 }();
 
 unsigned FSE_Sequence::addBaseLower(unsigned ctx, char base) {
-  return ((ctx << 2) + base2bits_arr[static_cast<unsigned>(base)]) &
+  return ((ctx << 2U) + base2bits_arr[static_cast<unsigned>(base)]) &
          CONTEXT_MASK;
 }
 
@@ -49,10 +49,11 @@ void SequenceEncoder::encodeRecord(FastqRecord &r, CompressedBuffersDst &cbs) {
 
   /* form context of the last base; add CONTEXT_SIZE - 1 symbols
    * (the closest symbol is in the upper 2 bits of the context) */
-  const int to_add_from_sequence = std::min(CONTEXT_SIZE - 1, r.length - 1);
+  const unsigned to_add_from_sequence =
+      std::min<unsigned>(CONTEXT_SIZE - 1, r.length - 1);
   const char *base = r.seqp + r.length - 2;
 
-  for (int i = 0; i < to_add_from_sequence; ++i)
+  for (unsigned i = 0; i < to_add_from_sequence; ++i)
     ctx = addBaseLower(ctx, *base--);
 
   /* points to the first base that has less than
@@ -80,8 +81,9 @@ void SequenceEncoder::encodeRecord(FastqRecord &r, CompressedBuffersDst &cbs) {
     BIT_flushBitsFast(&bitStream_); // TODO only flush on every K-th iteration?
   }
 
-  const int to_add_from_initial = (CONTEXT_SIZE - 1) - to_add_from_sequence;
-  int i;
+  const unsigned to_add_from_initial =
+      (CONTEXT_SIZE - 1) - to_add_from_sequence;
+  unsigned i;
   for (i = 0; i < to_add_from_initial; ++i) {
     /* this loop isn't entered if r.length > CONTEXT_SIZE */
     assert(r.length <= CONTEXT_SIZE);
@@ -146,7 +148,7 @@ FSE_Sequence::calculateFreqTable(const FastqChunk &chunk) {
   for (const auto &r : chunk.records) {
     unsigned ctx = INITIAL_CONTEXT; // reset at the beginning of a record
 
-    for (char c : r.seq()) {
+    for (const char c : r.seq()) {
       if (c == 'N')
         continue;
 

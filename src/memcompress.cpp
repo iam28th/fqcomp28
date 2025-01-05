@@ -24,7 +24,7 @@ int paramLZPHashSize = 15;
 int paramLZPMinLen = 128;
 
 int paramFeatures() {
-  int features =
+  const int features =
       (paramEnableFastMode ? LIBBSC_FEATURE_FASTMODE : LIBBSC_FEATURE_NONE) |
       (paramEnableMultiThreading ? LIBBSC_FEATURE_MULTITHREADING
                                  : LIBBSC_FEATURE_NONE) |
@@ -40,9 +40,9 @@ namespace fqzcomp28 {
 
 std::size_t memcompress(std::byte *dst, const std::byte *src,
                         const std::size_t src_size) {
-  [[maybe_unused]] int ret = bsc_init(paramFeatures());
+  [[maybe_unused]] const int ret = bsc_init(paramFeatures());
   assert(ret == LIBBSC_NO_ERROR);
-  int compressedSize =
+  const int compressedSize =
       bsc_compress(reinterpret_cast<const unsigned char *>(src),
                    reinterpret_cast<unsigned char *>(dst),
                    narrow_cast<int>(src_size), paramLZPHashSize, paramLZPMinLen,

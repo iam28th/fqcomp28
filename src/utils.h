@@ -22,7 +22,7 @@ template <class Target, class Source> Target narrow_cast(Source v) {
 template <TriviallyCopyable T>
 void storeAsBytes(const T val, std::vector<std::byte> &storage) {
   const std::byte *p = reinterpret_cast<const std::byte *>(&val);
-  std::size_t old_size = storage.size();
+  const std::size_t old_size = storage.size();
   storage.resize(storage.size() + sizeof(T));
   std::memcpy(storage.data() + old_size, p, sizeof(val));
 }

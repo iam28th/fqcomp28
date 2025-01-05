@@ -94,9 +94,9 @@ void Workspace::startNewChunk() {
 
 void CompressionWorkspace::encodeHeader(const std::string_view header,
                                         CompressedBuffersDst &cbs) {
-  auto field_start = header.begin() + 1; /* skip '@' */
+  const auto *field_start = header.begin() + 1; /* skip '@' */
   for (std::size_t i = 0, E = fmt_.n_fields() - 1; i < E; ++i) {
-    const auto field_end =
+    const auto *field_end =
         std::find(field_start + 1, header.end(), fmt_.separators[i]);
 
     auto &storage = cbs.header_fields[i];
@@ -141,7 +141,7 @@ unsigned DecompressionWorkspace::decodeHeader(char *dst,
                                      std::get<headers::numeric_t>(prev_value));
     }
 
-    *dst++ += fmt_.separators[i];
+    *dst++ = fmt_.separators[i];
   }
   auto &storage = cbs.header_fields.back();
   auto &prev_value = prev_header_fields_.back();

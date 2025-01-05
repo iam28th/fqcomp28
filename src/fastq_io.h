@@ -35,7 +35,7 @@ private:
 
 class FastqWriter {
 public:
-  FastqWriter(std::string mates1);
+  explicit FastqWriter(std::string mates1);
   void writeChunk(FastqChunk const &chunk);
 
   void flush() { ofs1_.flush(); }

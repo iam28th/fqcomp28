@@ -7,7 +7,7 @@
 namespace fqzcomp28 {
 FastqReader::FastqReader(std::string mates1, std::size_t reading_size)
     : reading_size_(reading_size), ifs1_(mates1),
-      bytes_left1_(std::filesystem::file_size(mates1)) {};
+      bytes_left1_(std::filesystem::file_size(mates1)), bytes_left2_(0) {};
 
 FastqReader::FastqReader(std::string mates1, std::string mates2,
                          std::size_t reading_size)

@@ -26,9 +26,9 @@ public:
   constexpr static unsigned QBITS = 12;
 
   /** masks bits which store quality symbols */
-  constexpr static unsigned QCONTEXT_MASK = (1 << QBITS) - 1;
-  constexpr static int CONTEXT_BITS = QBITS + 1;
-  constexpr static int N_MODELS = 1 << CONTEXT_BITS;
+  constexpr static unsigned QCONTEXT_MASK = (1U << QBITS) - 1;
+  constexpr static unsigned CONTEXT_BITS = QBITS + 1;
+  constexpr static int N_MODELS = 1U << CONTEXT_BITS;
 
 protected:
   /**
@@ -38,7 +38,7 @@ protected:
    */
   /** number of bits in ctx reserved for previous quality values */
   static unsigned calcContext(unsigned q, unsigned q1, unsigned q2) {
-    unsigned ctx = (((q1 > q2 ? q1 : q2) << 6) + q) & ((1 << QBITS) - 1);
+    unsigned ctx = (((q1 > q2 ? q1 : q2) << 6U) + q) & ((1U << QBITS) - 1);
     ctx += (static_cast<unsigned>(q1 == q2) << QBITS);
     return ctx;
   }
@@ -63,7 +63,7 @@ protected:
 class QualityEncoder : FSE_Quality,
                        public FSE_Encoder<FSE_Quality::FreqTableT> {
 public:
-  QualityEncoder(const FreqTableT *ft)
+  explicit QualityEncoder(const FreqTableT *ft)
       : FSE_Encoder<FSE_Quality::FreqTableT>(ft) {};
 
   void encodeRecord(const FastqRecord &);
@@ -76,7 +76,7 @@ public:
 class QualityDecoder : FSE_Quality,
                        public FSE_Decoder<FSE_Quality::FreqTableT> {
 public:
-  QualityDecoder(const FreqTableT *ft)
+  explicit QualityDecoder(const FreqTableT *ft)
       : FSE_Decoder<FSE_Quality::FreqTableT>(ft) {};
 
   /** assumes that record fields readlen and qualp are correctly set */
