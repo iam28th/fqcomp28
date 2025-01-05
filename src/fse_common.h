@@ -24,13 +24,111 @@ createCTableBuildWksp(const unsigned maxSymbolValue, const unsigned tableLog) {
       FSE_BUILD_CTABLE_WORKSPACE_SIZE(maxSymbolValue, tableLog));
 }
 
-#if 0
 /**
  * A class template for common FSE encoder methods
- * (currently these are ctor and dtor)
+ * (currently these are ctor/dtor, and {start,end}Chunk)
  */
-template <class FreqTableT> class FSE_Encoder {};
-#endif
+template <class FreqTableT> class FSE_Encoder {
+protected:
+  const FreqTableT *ft_;
+  BIT_CStream_t bitStream_;
+
+  template <typename T> using fse_array = FreqTableT::template fse_array<T>;
+  fse_array<FSE_CState_t> states_;
+  fse_array<FSE_CTable *> tables_;
+
+  FSE_Encoder(const FreqTableT *ft) : ft_(ft) {
+    /* according to fse.h, MAX_SYMBOL should be enough here
+     * but according to valgrind it's not (in case of quality
+     * alphabet on a very small input;
+     * could be because some frequency tables are "empty") */
+    auto wksp = createCTableBuildWksp(ft_->MAX_SYMBOL + 1, ft_->max_log);
+
+    for (unsigned ctx = 0; ctx < FreqTableT::N_MODELS; ++ctx) {
+      tables_[ctx] = FSE_createCTable(FreqTableT::MAX_SYMBOL, ft_->logs[ctx]);
+      assert(static_cast<long int>(wksp.size()) >= (1 << ft_->max_log));
+
+      [[maybe_unused]] const std::size_t ret = FSE_buildCTable_wksp(
+          tables_[ctx], ft_->norm_counts[ctx].data(), FreqTableT::MAX_SYMBOL,
+          ft_->logs[ctx], wksp.data(),
+          wksp.size() * sizeof(typename decltype(wksp)::value_type));
+      assert(ret == 0);
+    }
+  }
+
+  ~FSE_Encoder() {
+    for (FSE_CTable *ct : tables_)
+      FSE_freeCTable(ct);
+  }
+
+  /**
+   * Init states and tie bitStream to dst;
+   * dst should have been resized by the caller
+   */
+public:
+  void startChunk(std::vector<std::byte> &dst) {
+    [[maybe_unused]] auto ret =
+        BIT_initCStream(&bitStream_, dst.data(), dst.size());
+    assert(ret == 0);
+    for (unsigned ctx = 0; ctx < FreqTableT::N_MODELS; ++ctx)
+      FSE_initCState(states_.begin() + ctx, tables_[ctx]);
+  }
+
+  /** @return Resulting compressed size */
+  std::size_t endChunk() {
+    for (auto &state : states_)
+      FSE_flushCState(&bitStream_, &state);
+    return BIT_closeCStream(&bitStream_);
+  }
+};
+
+/**
+ * A class template for common FSE decoder methods
+ * (currently these are ctor/dtor, and {start,end}Chunk)
+ */
+template <class FreqTableT> class FSE_Decoder {
+protected:
+  const FreqTableT *ft_;
+  BIT_DStream_t bitStream_;
+
+  template <typename T> using fse_array = FreqTableT::template fse_array<T>;
+  fse_array<FSE_DState_t> states_;
+  fse_array<FSE_DTable *> tables_;
+
+  FSE_Decoder(const FreqTableT *ft) : ft_(ft) {
+    std::vector<unsigned> wksp(
+        FSE_BUILD_DTABLE_WKSP_SIZE_U32(ft->max_log, FreqTableT::MAX_SYMBOL));
+
+    for (unsigned ctx = 0; ctx < FreqTableT::N_MODELS; ++ctx) {
+      tables_[ctx] = FSE_createDTable(ft_->logs[ctx]);
+
+      [[maybe_unused]] const std::size_t ret = FSE_buildDTable_wksp(
+          tables_[ctx], ft_->norm_counts[ctx].data(), FreqTableT::MAX_SYMBOL,
+          ft->logs[ctx], wksp.data(),
+          wksp.size() * sizeof(decltype(wksp)::value_type));
+      assert(ret == 0);
+    }
+  }
+
+  ~FSE_Decoder() {
+    for (FSE_DTable *dt : tables_)
+      FSE_freeDTable(dt);
+  }
+
+public:
+  void startChunk(std::vector<std::byte> &src) {
+    [[maybe_unused]] auto ret =
+        BIT_initDStream(&bitStream_, src.data(), src.size());
+    assert(ret == src.size());
+    /* init states in reverse flushing order */
+    for (unsigned i = FreqTableT::N_MODELS; i > 0; --i) {
+      const unsigned ctx = i - 1;
+      FSE_initDState(states_.begin() + ctx, &bitStream_, tables_[ctx]);
+    }
+  }
+
+  void endChunk() const { assert(BIT_endOfDStream(&bitStream_)); }
+};
 
 /**
  * A class template for frequency tables used by FSE codec

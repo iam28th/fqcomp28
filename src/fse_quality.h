@@ -8,6 +8,7 @@ namespace fqzcomp28 {
  - previous symbol (6 bits)
  - max of symbols at offsets -2 and -3 (6 bits)
  - whether symbols at offsets -2 and -3 are equal or not (1 bit) */
+// TODO: make it stateless (that it, remove ft_ field)
 class FSE_Quality {
 public:
   /** number of preceeding symbols in quality ctx; (unlike sequence contest,
@@ -46,56 +47,39 @@ public:
   using FreqTableT = FreqTable<N_MODELS, ALPHABET_SIZE>;
   template <typename T> using fse_array = FreqTableT::fse_array<T>;
 
-  FSE_Quality(const FreqTableT *ft) : ft_(ft) {}
-
   static std::unique_ptr<FreqTableT>
   calculateFreqTable(const FastqChunk &chunk);
 
 protected:
-  const FreqTableT *ft_;
-
   static unsigned symbolToBits(const char q) {
     return static_cast<unsigned char>(q) - QUAL_OFFSET;
   }
 };
 
-// TODO merge repeating methods with FSE_Sequence
-class QualityEncoder : FSE_Quality {
+/**
+ * Inherits parameters such as context size from FSE_Quality,
+ * and initialization & cleanup methods from FSE_Encoder
+ */
+class QualityEncoder : FSE_Quality,
+                       public FSE_Encoder<FSE_Quality::FreqTableT> {
 public:
-  QualityEncoder(const FreqTableT *);
-  ~QualityEncoder();
-
-  /**
-   * Init states and tie bitStream to dst;
-   * dst should have been resized by the caller
-   */
-  void startChunk(std::vector<std::byte> &dst);
+  QualityEncoder(const FreqTableT *ft)
+      : FSE_Encoder<FSE_Quality::FreqTableT>(ft) {};
 
   void encodeRecord(const FastqRecord &);
-
-  /** @return Resulting compressed size */
-  std::size_t endChunk();
-
-private:
-  BIT_CStream_t bitStream_;
-  fse_array<FSE_CState_t> states_;
-  fse_array<FSE_CTable *> tables_;
 };
 
-class QualityDecoder : FSE_Quality {
+/**
+ * Inherits parameters such as context size from FSE_Quality,
+ * and initialization & cleanup methods from FSE_Encoder
+ */
+class QualityDecoder : FSE_Quality,
+                       public FSE_Decoder<FSE_Quality::FreqTableT> {
 public:
-  QualityDecoder(const FreqTableT *ft);
-  ~QualityDecoder();
+  QualityDecoder(const FreqTableT *ft)
+      : FSE_Decoder<FSE_Quality::FreqTableT>(ft) {};
 
   /** assumes that record fields readlen and qualp are correctly set */
   void decodeRecord(FastqRecord &);
-
-  void startChunk(std::vector<std::byte> &src);
-  void endChunk() const;
-
-private:
-  BIT_DStream_t bitStream_;
-  fse_array<FSE_DState_t> states_;
-  fse_array<FSE_DTable *> tables_;
 };
 } // namespace fqzcomp28

@@ -69,45 +69,32 @@ public:
   using FreqTableT = FreqTable<N_MODELS, ALPHABET_SIZE>;
   template <typename T> using fse_array = FreqTableT::fse_array<T>;
 
-  FSE_Sequence(const FreqTableT *ft) : ft_(ft) {}
-
   static std::unique_ptr<FreqTableT>
   calculateFreqTable(const FastqChunk &chunk);
-
-protected:
-  const FreqTableT *ft_;
 };
 
-class SequenceEncoder : FSE_Sequence {
+/**
+ * Inherits parameters such as context size from FSE_Sequence,
+ * and initialization & cleanup methods from FSE_Encoder
+ */
+class SequenceEncoder : FSE_Sequence,
+                        public FSE_Encoder<FSE_Sequence::FreqTableT> {
 public:
-  SequenceEncoder(const FreqTableT *);
-  ~SequenceEncoder();
-
-  /**
-   * Initialize states and tie bitStream_ to dst;
-   * dst should have been resized by the caller
-   */
-  void startChunk(std::vector<std::byte> &dst);
+  SequenceEncoder(const FreqTableT *ft)
+      : FSE_Encoder<FSE_Sequence::FreqTableT>(ft) {};
 
   /**
    * Writes sequence to bitStream_, skipping Ns;
    * count and positions of Ns are written into cbs
    */
   void encodeRecord(FastqRecord &rec, CompressedBuffersDst &cbs);
-
-  /** @return Resulting compressed size */
-  std::size_t endChunk();
-
-private:
-  BIT_CStream_t bitStream_;
-  fse_array<FSE_CState_t> states_;
-  fse_array<FSE_CTable *> tables_;
 };
 
-class SequenceDecoder : FSE_Sequence {
+class SequenceDecoder : FSE_Sequence,
+                        public FSE_Decoder<FSE_Sequence::FreqTableT> {
 public:
-  SequenceDecoder(const FreqTableT *ft);
-  ~SequenceDecoder();
+  SequenceDecoder(const FreqTableT *ft)
+      : FSE_Decoder<FSE_Sequence::FreqTableT>(ft) {}
 
   /**
    * Assumes that r's fields readlen and seqp are correctly set;
@@ -115,13 +102,8 @@ public:
    */
   void decodeRecord(FastqRecord &r, CompressedBuffersSrc &cbs);
 
-  void startChunk(std::vector<std::byte> &src);
-  void endChunk() const;
-
 private:
-  BIT_DStream_t bitStream_;
-  fse_array<FSE_DState_t> states_;
-  fse_array<FSE_DTable *> tables_;
+  /** Used to store positions of Ns in a read currently being decoded */
   std::vector<readlen_t> npos_buffer_;
 };
 
