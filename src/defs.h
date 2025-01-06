@@ -18,12 +18,8 @@ constexpr std::byte BYTE1{0x01};
 
 using FastqData = std::vector<char>;
 
-/**
- * non-owning - holds pointers into outside allocated data
- */
+/** Non-owning - holds pointers into outside allocated data */
 struct FastqRecord {
-  // TODO: make parsing a static method of FastqRecord?
-  // then fields can be made private...
 public:
   char *seqp, *qualp, *headerp;
   readlen_t length, header_length;
@@ -39,12 +35,12 @@ struct FastqChunk {
   FastqData raw_data;
   std::vector<FastqRecord> records;
 
-  /** position of the chunk in the input file */
-  std::size_t idx = 0;
-
   /** accamulated over all reads */
   std::size_t tot_reads_length = 0;
   std::size_t headers_length = 0;
+
+  /** position of the chunk in the input file */
+  unsigned idx = 0;
 
   void clear() {
     idx = 0;

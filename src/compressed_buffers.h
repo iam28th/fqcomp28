@@ -52,6 +52,9 @@ public:
 
   cb_original_sizes_t original_size;
 
+  /** position of the chunk in the input file */
+  uint32_t chunk_idx;
+
   virtual void clear() {
     seq.clear();
     qual.clear();

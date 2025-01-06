@@ -74,6 +74,7 @@ void processReads() {
     cstats += thread_compressed_stats[i].get_future().get();
   }
 
+  archive.flush(); /* needed to compare reported CR against actual filesize */
   printReport(istats, cstats, archive.meta(), std::cerr);
 }
 

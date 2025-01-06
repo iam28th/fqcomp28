@@ -159,6 +159,7 @@ unsigned DecompressionWorkspace::decodeHeader(char *dst,
 void CompressionWorkspace::prepareBuffersForEncoding(
     const FastqChunk &chunk, CompressedBuffersDst &cbs) {
   cbs.clear();
+  cbs.chunk_idx = chunk.idx;
 
   // TODO: estimate compressed sizes for all buffers during
   // initial dataset analysis

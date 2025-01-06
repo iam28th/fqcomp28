@@ -27,6 +27,8 @@ void Archive::readArchiveHeader() { meta_ = DatasetMeta::loadFromStream(fs_); }
 void Archive::writeBlock(const CompressedBuffersDst &cb) {
   std::lock_guard guard(mtx_);
 
+  writeInteger(cb.chunk_idx);
+
   /* these 2 number can be deduced,
    * but let's just store them to simplify decompression */
   writeInteger(cb.original_size.total);
@@ -70,6 +72,8 @@ void Archive::writeBlock(const CompressedBuffersDst &cb) {
 
 bool Archive::readBlock(CompressedBuffersSrc &cb) {
   cb.clear();
+
+  cb.chunk_idx = readInteger<uint32_t>();
 
   cb.original_size.total = readInteger<uint32_t>();
   if (fs_.eof())

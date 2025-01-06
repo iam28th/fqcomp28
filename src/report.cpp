@@ -1,4 +1,5 @@
 #include "report.h"
+#include "settings.h"
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -88,6 +89,12 @@ void printReport(const InputStats &inp, const CompressedStats &comp,
   print_cr("Quality", inp.seq, comp.quality() + meta.quality());
   print_cr("Headers", inp.header, comp.headers() + meta.headers());
   print_cr("Total", inp.total(), archive_size);
+
+#ifndef NDEBUG
+  /* check that CR is calculated correctly */
+  const auto *set = Settings::getInstance();
+  assert(archive_size == std::filesystem::file_size(set->non_storable.archive));
+#endif
 
   os << sections_separator;
   print_string("# blocks: ", os);

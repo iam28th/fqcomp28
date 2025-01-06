@@ -29,7 +29,7 @@ private:
   std::ifstream ifs1_, ifs2_;
   std::size_t bytes_left1_, bytes_left2_;
   /** tracks how many chunks were read already */
-  std::size_t chunks_read_ = 0;
+  unsigned chunks_read_ = 0;
 
   std::mutex mtx_;
 };
