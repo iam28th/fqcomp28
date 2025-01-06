@@ -17,10 +17,12 @@ FastqReader::FastqReader(std::string mates1, std::string mates2,
 }
 
 bool FastqReader::readNextChunk(FastqChunk &chunk) {
-  std::lock_guard guard(mtx_);
-
+  /* safe to call before lock,
+   * becase each thread operates on each own's objects */
   chunk.clear();
   chunk.idx = chunks_read_++;
+
+  const std::lock_guard guard(mtx_);
 
   if (bytes_left1_ == 0)
     return false;
@@ -59,7 +61,7 @@ bool FastqReader::readNextChunk(FastqChunk &chunk) {
 }
 
 std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
-  assert(chunk.records.size() == 0);
+  assert(chunk.records.empty());
 
   const std::size_t size = chunk.raw_data.size();
   std::size_t bytes_processed = 0;
@@ -77,7 +79,7 @@ std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
                       : narrow_cast<std::size_t>(rec.headerp - beg));
     }
 
-    char *line_end = static_cast<char *>(
+    char *const line_end = static_cast<char *>(
         std::memchr(line_start, '\n', size - bytes_processed));
 
     if (line_end == nullptr) {
@@ -121,8 +123,17 @@ std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
 FastqWriter::FastqWriter(std::string mates1) : ofs1_(mates1) {}
 
 void FastqWriter::writeChunk(FastqChunk const &chunk) {
+  std::unique_lock guard(mtx_);
+
+  while (chunk.idx != chunks_written_)
+    cv_.wait(guard);
+
   ofs1_.write(chunk.raw_data.data(),
               narrow_cast<std::streamsize>(chunk.raw_data.size()));
+
+  guard.unlock();
+  chunks_written_++;
+  cv_.notify_all();
 }
 
 } // namespace fqzcomp28

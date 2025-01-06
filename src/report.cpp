@@ -35,7 +35,8 @@ void print_ratio(std::size_t num, std::size_t denom, std::ostream &os) {
 } // namespace
 
 void printReport(const InputStats &inp, const CompressedStats &comp,
-                 const DatasetMeta &meta, std::ostream &os) {
+                 const Archive &archive, std::ostream &os) {
+  const auto &meta = archive.meta();
 
   os << std::left;
   os << sections_separator;
@@ -51,9 +52,10 @@ void printReport(const InputStats &inp, const CompressedStats &comp,
 
   os << sections_separator;
   os << "Compressed stream sizes:\n";
-  const std::size_t archive_size =
-      comp.total(meta.n_fields_of_type(headers::FieldType::STRING)) +
-      meta.size();
+  const std::size_t archive_size = archive.indexBytes() +
+                                   comp.data_section_size(meta.n_fields_of_type(
+                                       headers::FieldType::STRING)) +
+                                   meta.size();
   auto print_cstream = [&os, archive_size](std::string name,
                                            std::size_t bytes) {
     print_string(name, os);
@@ -90,15 +92,35 @@ void printReport(const InputStats &inp, const CompressedStats &comp,
   print_cr("Headers", inp.header, comp.headers() + meta.headers());
   print_cr("Total", inp.total(), archive_size);
 
-#ifndef NDEBUG
   /* check that CR is calculated correctly */
-  const auto *set = Settings::getInstance();
+  [[maybe_unused]] const auto *set = Settings::getInstance();
   assert(archive_size == std::filesystem::file_size(set->non_storable.archive));
-#endif
 
   os << sections_separator;
   print_string("# blocks: ", os);
   print_integer(comp.n_blocks, os);
   os << '\n';
+}
+
+std::size_t
+CompressedStats::data_section_size(const long n_string_fields) const {
+  std::size_t ret = sequence() + quality() + headers();
+
+  std::size_t block_meta = 0;
+  block_meta += sizeof(uint32_t);     // total size
+  block_meta += sizeof(uint32_t);     // n_records
+  block_meta += 2 * sizeof(uint32_t); // readlens (original & compressed)
+  block_meta += 2 * sizeof(uint32_t); // npos
+  block_meta += 2 * sizeof(uint32_t); // ncount
+  block_meta +=
+      2 * sizeof(uint32_t); // compressed sizes for sequence and quality
+
+  const auto n_string = static_cast<uint64_t>(n_string_fields);
+  const uint64_t n_numeric = header_fields.size() - n_string;
+  block_meta += n_string * 3 * 2 * sizeof(uint32_t);
+  block_meta += n_numeric * 2 * sizeof(uint32_t);
+
+  ret += n_blocks * block_meta;
+  return ret;
 }
 }; // namespace fqzcomp28

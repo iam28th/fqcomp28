@@ -1,13 +1,16 @@
 #pragma once
 #include "defs.h"
+#include <condition_variable>
 #include <fstream>
 #include <mutex>
 
 namespace fqzcomp28 {
 
+/** Reads data from a single .fastq file */
 class FastqReader {
 public:
   FastqReader(std::string mates1, std::size_t reading_size);
+  /** This ctor is more for the future... */
   FastqReader(std::string mates1, std::string mates2, std::size_t reading_size);
 
   /** @return true if reading was succesfull */
@@ -34,6 +37,7 @@ private:
   std::mutex mtx_;
 };
 
+/** Writes data to a single .fastq file */
 class FastqWriter {
 public:
   explicit FastqWriter(std::string mates1);
@@ -43,6 +47,11 @@ public:
 
 private:
   std::ofstream ofs1_;
+  /** Used to compare against chunk index, to write chunks in original order */
+  unsigned chunks_written_ = 0;
+  std::mutex mtx_;
+  /** To wait until preceeding chunks have been written */
+  std::condition_variable cv_;
 };
 
 } // namespace fqzcomp28

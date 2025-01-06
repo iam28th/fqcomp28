@@ -127,6 +127,7 @@ private:
   static void prepareFastqChunk(FastqChunk &chunk,
                                 const CompressedBuffersSrc &cbs) {
     chunk.clear();
+    chunk.idx = cbs.chunk_idx;
     chunk.raw_data.resize(cbs.original_size.total);
     chunk.records.resize(cbs.original_size.n_records);
   }

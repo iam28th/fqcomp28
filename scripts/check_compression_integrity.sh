@@ -19,6 +19,6 @@ cleanup()
 }
 
 /usr/bin/time -v ./fqzcomp28 c --input1 "$INP1" -o "$ARCHIVE" --threads "$THREADS" && \
-        ./fqzcomp28 d --input "$ARCHIVE" --o1 "$DECOMP1" && \
+        ./fqzcomp28 d --input "$ARCHIVE" --o1 "$DECOMP1" --threads "$THREADS" && \
         "$DIFFCMD" "$INP1" "$DECOMP1" \
         && cleanup

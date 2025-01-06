@@ -11,66 +11,39 @@ bool compressedPartEqual(const CompressedBuffersDst &dst,
          dst.compressed_readlens == src.compressed_readlens &&
          dst.compressed_header_fields == src.compressed_header_fields;
 }
+
 struct ArchiveTester {
-  static void createArchive() {
-    const path_t input = "test/data/SRR065390_sub_1.fastq";
-    const path_t archive_path = "archive.f2q8z";
-
-    SECTION("checks") {
-      auto compr_archive = Archive(archive_path, input);
-      /* header should have been written after flush */
-      compr_archive.flush();
-
-      auto decompr_archive = Archive(archive_path);
-      CHECK(compr_archive.meta() == decompr_archive.meta());
-    }
-
-    std::filesystem::remove_all(archive_path);
-  }
-
   /**
-   * create archive, write block of data, read it; and check that compressed
-   * contents are the same
+   * Compress a file; create decompression archive;
+   * check that index and meta sections match between compression
+   * and decompression archives
+   * (after sorting index in the compression archive)
    */
-  static void writeBlock() {
+  static void header() {
+    const auto *set = Settings::getInstance();
     const path_t input = "test/data/SRR065390_sub_1.fastq";
-    const path_t archive_path = "archive.f2q8z";
-    const std::size_t chunk_size = 100 * 1024; // 150Kb
+    const path_t archive_path = "test_archive_header.fqz";
 
-    SECTION("checks") {
-      Archive archive_out(archive_path, input);
-      archive_out.flush(); // to write meta
-      Archive archive_in(archive_path);
+    Archive compr_archive(archive_path, input);
+    FastqReader reader(input, set->reading_chunk_size());
+    FastqChunk chunk;
 
-      FastqChunk chunk_in, chunk_out;
-      FastqReader reader(input, chunk_size);
+    CompressedBuffersDst cbs;
+    CompressionWorkspace wksp(&compr_archive.meta());
 
-      CompressedBuffersDst cbs_dst;
-      CompressedBuffersSrc cbs_src;
-
-      CompressionWorkspace cwksp(&archive_out.meta());
-      DecompressionWorkspace dwksp(&archive_out.meta());
-
-      [[maybe_unused]] unsigned n_chunks = 0;
-      while (reader.readNextChunk(chunk_in)) {
-        ++n_chunks;
-
-        cwksp.encodeChunk(chunk_in, cbs_dst);
-
-        archive_out.writeBlock(cbs_dst);
-        archive_out.flush();
-
-        archive_in.readBlock(cbs_src);
-
-        // TODO: another check after "decompressedMiscBuffers" ?
-        CHECK(compressedPartEqual(cbs_dst, cbs_src));
-
-        dwksp.decodeChunk(chunk_out, cbs_src);
-      }
-
-      const bool ret = archive_in.readBlock(cbs_src);
-      CHECK(!ret);
+    while (reader.readNextChunk(chunk)) {
+      wksp.encodeChunk(chunk, cbs);
+      compr_archive.writeBlock(cbs);
     }
+
+    compr_archive.writeIndex();
+    compr_archive.flush();
+
+    const Archive decompr_archive(archive_path);
+    CHECK(compr_archive.meta() == decompr_archive.meta());
+
+    compr_archive.sortIndex();
+    CHECK(compr_archive.index_ == decompr_archive.index_);
 
     std::filesystem::remove_all(archive_path);
   }
@@ -78,6 +51,4 @@ struct ArchiveTester {
 } // namespace fqzcomp28
 
 using namespace fqzcomp28;
-TEST_CASE("Archive creation") { ArchiveTester::createArchive(); }
-
-TEST_CASE("Archive::{read,write}Block") { ArchiveTester::writeBlock(); }
+TEST_CASE("Archive header") { ArchiveTester::header(); }

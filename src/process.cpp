@@ -74,8 +74,9 @@ void processReads() {
     cstats += thread_compressed_stats[i].get_future().get();
   }
 
+  archive.writeIndex();
   archive.flush(); /* needed to compare reported CR against actual filesize */
-  printReport(istats, cstats, archive.meta(), std::cerr);
+  printReport(istats, cstats, archive, std::cerr);
 }
 
 void processArchiveParts() {
@@ -83,13 +84,21 @@ void processArchiveParts() {
   Archive archive(set->non_storable.archive);
   FastqWriter writer(set->non_storable.mates1);
 
-  CompressedBuffersSrc cbs;
-  FastqChunk chunk;
-  DecompressionWorkspace wksp(&archive.meta());
+  const unsigned n_threads = set->non_storable.n_threads;
+  std::vector<std::jthread> threads;
+  threads.reserve(n_threads);
 
-  while (archive.readBlock(cbs)) {
-    wksp.decodeChunk(chunk, cbs);
-    writer.writeChunk(chunk);
+  for (unsigned i = 0; i < n_threads; ++i) {
+    threads.emplace_back([&archive, &writer]() {
+      CompressedBuffersSrc cbs;
+      FastqChunk chunk;
+      DecompressionWorkspace wksp(&archive.meta());
+
+      while (archive.readBlock(cbs)) {
+        wksp.decodeChunk(chunk, cbs);
+        writer.writeChunk(chunk);
+      }
+    });
   }
 }
 } // namespace fqzcomp28

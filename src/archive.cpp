@@ -3,31 +3,68 @@
 
 namespace fqzcomp28 {
 
-/** Creates Archive to read compressed data from an existing fqzcomp28 file */
 Archive::Archive(const path_t archive_path)
     : fs_(archive_path, std::ios_base::binary | std::ios_base::in) {
+
+  if (!fs_)
+    throw std::system_error(errno, std::generic_category(), archive_path);
+
   readArchiveHeader();
 }
 
 Archive::Archive(const path_t archive_path, const path_t file_to_gather_meta,
                  const std::size_t sample_size_bytes)
     : fs_(archive_path, std::ios_base::binary | std::ios_base::out) {
+  if (!fs_)
+    throw std::system_error(errno, std::generic_category(), archive_path);
+
   meta_ = analyzeDataset(file_to_gather_meta, sample_size_bytes);
-  writeArchiveHeader();
+
+  writeMeta();
 }
 
-void Archive::writeArchiveHeader() {
-  // TODO: write parameters which are required for decompression
-  // (once there're any ...)
+void Archive::writeMeta() {
+  fs_.seekp(OFFSET_META);
   DatasetMeta::storeToStream(meta_, fs_);
 }
 
-void Archive::readArchiveHeader() { meta_ = DatasetMeta::loadFromStream(fs_); }
+void Archive::readArchiveHeader() {
+  uint32_t n_blocks;
+  fs_.read(to_char_ptr(&n_blocks), sizeof(n_blocks));
+
+  meta_ = DatasetMeta::loadFromStream(fs_);
+  const auto data_start_pos = fs_.tellg();
+
+  fs_.seekg(-narrow_cast<std::streamoff>(n_blocks * sizeof(BlockInfo)),
+            std::ios_base::end);
+  index_.resize(n_blocks);
+  fs_.read(to_char_ptr(index_.data()),
+           narrow_cast<std::streamsize>(n_blocks * sizeof(BlockInfo)));
+
+  fs_.seekg(data_start_pos);
+
+  sortIndex();
+}
+
+void Archive::writeIndex() {
+  const std::streamoff data_end_pos = fs_.tellp();
+
+  fs_.seekp(0);
+  const auto index_size = narrow_cast<uint32_t>(index_.size());
+  fs_.write(to_char_ptr(&index_size), sizeof(index_size));
+
+  fs_.seekp(data_end_pos);
+  fs_.write(to_char_ptr(index_.data()),
+            narrow_cast<std::streamoff>(index_.size() * sizeof(BlockInfo)));
+}
 
 void Archive::writeBlock(const CompressedBuffersDst &cb) {
-  std::lock_guard guard(mtx_);
+  BlockInfo binfo;
+  binfo.idx = cb.chunk_idx;
 
-  writeInteger(cb.chunk_idx);
+  const std::lock_guard guard(mtx_);
+
+  binfo.offset = narrow_cast<int64_t>(fs_.tellp());
 
   /* these 2 number can be deduced,
    * but let's just store them to simplify decompression */
@@ -68,16 +105,24 @@ void Archive::writeBlock(const CompressedBuffersDst &cb) {
       writeBytes(field_cdata.content);
     }
   }
+
+  index_.push_back(binfo);
 }
 
 bool Archive::readBlock(CompressedBuffersSrc &cb) {
+  /* safe to call before lock,
+   * becase each thread operates on each own's objects */
   cb.clear();
 
-  cb.chunk_idx = readInteger<uint32_t>();
+  const std::lock_guard guard(mtx_);
+  if (blocks_processed_ == index_.size())
+    return false;
+
+  const auto &binfo = index_[blocks_processed_++];
+  fs_.seekg(binfo.offset);
+  cb.chunk_idx = binfo.idx;
 
   cb.original_size.total = readInteger<uint32_t>();
-  if (fs_.eof())
-    return false;
 
   cb.original_size.n_records = readInteger<uint32_t>();
 

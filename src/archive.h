@@ -8,9 +8,26 @@
 #include <mutex>
 
 namespace fqzcomp28 {
+/**
+ * Archive structure:
+ * - Number of data blocks (uin32_t)
+ * - Metadata block (frequency tables etc.)
+ * - Data block 1, data block 2, ..., data block N
+ * - Index (n_blocks * sizeof(BlockInfo) bytes), describing
+ *   offset and original order or each block
+ */
 class Archive {
-  // TODO {write,read}{Index}
-  struct Index {};
+  /** Describes location and size of a data block in the archive file */
+  struct BlockInfo {
+    int64_t offset;
+    /** Position (order) of the corresponding chunk in the input file */
+    uint32_t idx;
+
+    bool operator==(const BlockInfo &other) const = default;
+  };
+
+  /** Offset at which metadata is located in the file */
+  constexpr static std::streamoff OFFSET_META = sizeof(uint32_t);
 
 public:
   /** Creates Archive to read compressed data from an existing fqzcomp28 file */
@@ -31,15 +48,21 @@ public:
   void writeBlock(const CompressedBuffersDst &cb);
   bool readBlock(CompressedBuffersSrc &cb);
 
+  void writeIndex();
   void flush() { fs_.flush(); };
-  [[nodiscard]] auto size() const { return bytes_written; }
 
   const DatasetMeta &meta() const { return meta_; }
+
+  /** @return Number of bytes occupied by the idnex */
+  [[nodiscard]] std::size_t indexBytes() const {
+    return sizeof(uint32_t) + index_.size() * sizeof(BlockInfo);
+  }
 
   friend struct ArchiveTester;
 
 private:
-  void writeArchiveHeader();
+  void writeMeta();
+
   void readArchiveHeader();
 
   void writeBytes(const std::vector<std::byte> &);
@@ -56,7 +79,18 @@ private:
   };
 
 private:
-  uint64_t bytes_written = 0;
+  /**
+   * Sorts index entries according to the order of corresponding input chunks
+   * in the original file
+   */
+  void sortIndex() {
+    std::sort(
+        index_.begin(), index_.end(),
+        [](const auto &lhs, const auto &rhs) { return lhs.idx < rhs.idx; });
+  }
+
+  std::vector<BlockInfo> index_;
+  std::size_t blocks_processed_;
   std::fstream fs_;
   DatasetMeta meta_;
   std::mutex mtx_;
