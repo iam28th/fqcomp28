@@ -1,4 +1,5 @@
 #pragma once
+#include "utils.h"
 #include <array>
 #include <memory>
 #include <numeric>
@@ -37,7 +38,7 @@ protected:
   fse_array<FSE_CState_t> states_;
   fse_array<FSE_CTable *> tables_;
 
-  FSE_Encoder(const FreqTableT *ft) : ft_(ft) {
+  explicit FSE_Encoder(const FreqTableT *ft) : ft_(ft) {
     /* according to fse.h, MAX_SYMBOL should be enough here
      * but according to valgrind it's not (in case of quality
      * alphabet on a very small input;
@@ -95,7 +96,7 @@ protected:
   fse_array<FSE_DState_t> states_;
   fse_array<FSE_DTable *> tables_;
 
-  FSE_Decoder(const FreqTableT *ft) : ft_(ft) {
+  explicit FSE_Decoder(const FreqTableT *ft) : ft_(ft) {
     std::vector<unsigned> wksp(
         FSE_BUILD_DTABLE_WKSP_SIZE_U32(ft->max_log, FreqTableT::MAX_SYMBOL));
 

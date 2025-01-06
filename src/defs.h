@@ -39,10 +39,15 @@ struct FastqChunk {
   FastqData raw_data;
   std::vector<FastqRecord> records;
 
+  /** position of the chunk in the input file */
+  std::size_t idx = 0;
+
   /** accamulated over all reads */
   std::size_t tot_reads_length = 0;
   std::size_t headers_length = 0;
+
   void clear() {
+    idx = 0;
     tot_reads_length = 0;
     headers_length = 0;
     raw_data.clear();

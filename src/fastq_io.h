@@ -1,6 +1,7 @@
 #pragma once
 #include "defs.h"
 #include <fstream>
+#include <mutex>
 
 namespace fqzcomp28 {
 
@@ -9,9 +10,7 @@ public:
   FastqReader(std::string mates1, std::size_t reading_size);
   FastqReader(std::string mates1, std::string mates2, std::size_t reading_size);
 
-  /**
-   * @return true if reading was succesfull
-   */
+  /** @return true if reading was succesfull */
   bool readNextChunk(FastqChunk &chunk);
 
   /**
@@ -22,15 +21,17 @@ public:
   static std::size_t parseRecords(FastqChunk &chunk);
 
 private:
-  /**
-   * chunk size in bytes (approximate, in case of partial read)
-   */
+  /** chunk size in bytes (approximate, in case of partial read) */
   const std::size_t reading_size_;
 
   FastqData partial1_, partial2_;
 
   std::ifstream ifs1_, ifs2_;
   std::size_t bytes_left1_, bytes_left2_;
+  /** tracks how many chunks were read already */
+  std::size_t chunks_read_ = 0;
+
+  std::mutex mtx_;
 };
 
 class FastqWriter {

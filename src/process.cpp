@@ -5,6 +5,8 @@
 #include "fastq_io.h"
 #include "settings.h"
 #include "workspace.h"
+#include <future>
+#include <thread>
 #include <vector>
 
 namespace fqzcomp28 {
@@ -26,33 +28,53 @@ int startProgram(int argc, char **argv) {
 }
 
 void processReads() {
-  auto *const set = Settings::getInstance();
+  const auto *set = Settings::getInstance();
   const auto mates1 = set->non_storable.mates1;
 
   Archive archive(set->non_storable.archive, mates1);
-
-  FastqChunk chunk;
   FastqReader reader(mates1, set->reading_chunk_size());
 
-  InputStats istats;
+  const unsigned n_threads = set->non_storable.n_threads;
+  std::vector<std::thread> threads;
+  threads.reserve(n_threads);
 
-  CompressedBuffersDst cbs;
-  CompressionWorkspace wksp(&archive.meta());
+  std::vector<std::promise<InputStats>> thread_input_stats(n_threads);
+  std::vector<std::promise<CompressedStats>> thread_compressed_stats(n_threads);
 
-  [[maybe_unused]] unsigned n_blocks = 0;
-  while (reader.readNextChunk(chunk)) {
-    ++n_blocks;
+  for (unsigned i = 0; i < n_threads; ++i) {
+    auto &istat_promise = thread_input_stats[i];
+    auto &cstat_promise = thread_compressed_stats[i];
+    threads.emplace_back([&reader, &archive, &istat_promise, &cstat_promise]() {
+      FastqChunk chunk;
+      InputStats istats;
 
-    istats.seq += chunk.tot_reads_length;
-    istats.header += chunk.headers_length;
-    istats.n_records += chunk.records.size();
+      CompressedBuffersDst cbs;
+      CompressionWorkspace wksp(&archive.meta());
 
-    wksp.encodeChunk(chunk, cbs);
+      while (reader.readNextChunk(chunk)) {
+        istats.seq += chunk.tot_reads_length;
+        istats.header += chunk.headers_length;
+        istats.n_records += chunk.records.size();
 
-    archive.writeBlock(cbs);
+        wksp.encodeChunk(chunk, cbs);
+        archive.writeBlock(cbs);
+      }
+
+      istat_promise.set_value(istats);
+      cstat_promise.set_value(wksp.stats());
+    });
+  }
+  for (auto &t : threads)
+    t.join();
+
+  InputStats istats = thread_input_stats[0].get_future().get();
+  CompressedStats cstats = thread_compressed_stats[0].get_future().get();
+  for (unsigned i = 1; i < n_threads; ++i) {
+    istats += thread_input_stats[i].get_future().get();
+    cstats += thread_compressed_stats[i].get_future().get();
   }
 
-  printReport(istats, wksp.stats(), archive.meta(), std::cerr);
+  printReport(istats, cstats, archive.meta(), std::cerr);
 }
 
 void processArchiveParts() {

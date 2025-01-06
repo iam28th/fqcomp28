@@ -17,7 +17,10 @@ FastqReader::FastqReader(std::string mates1, std::string mates2,
 }
 
 bool FastqReader::readNextChunk(FastqChunk &chunk) {
+  std::lock_guard guard(mtx_);
+
   chunk.clear();
+  chunk.idx = chunks_read_++;
 
   if (bytes_left1_ == 0)
     return false;
@@ -38,6 +41,8 @@ bool FastqReader::readNextChunk(FastqChunk &chunk) {
   assert(ifs1_);
 
   /* parse data to find last fully loaded record */
+  // TODO: only find the end of the last record,
+  // and parse the rest of the chunk in parallel
   const std::size_t actual_chunk_size = parseRecords(chunk);
   assert(actual_chunk_size <= reading_size_);
 

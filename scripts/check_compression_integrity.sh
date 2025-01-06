@@ -3,9 +3,13 @@
 ARCHIVE="archive.f2q8z"
 DECOMP1="decomp1.fastq"
 INP1="$1"
+THREADS="$2"
+if [[ -z "$THREADS" ]]
+then
+        THREADS=4
+fi
 
-# TODO use cmp for large files
-DIFFCMD=diff
+DIFFCMD=cmp
 
 cleanup()
 {
@@ -14,7 +18,7 @@ cleanup()
         return
 }
 
-/usr/bin/time -v ./fqzcomp28 c --input1 "$INP1" -o "$ARCHIVE" && \
+/usr/bin/time -v ./fqzcomp28 c --input1 "$INP1" -o "$ARCHIVE" --threads "$THREADS" && \
         ./fqzcomp28 d --input "$ARCHIVE" --o1 "$DECOMP1" && \
         "$DIFFCMD" "$INP1" "$DECOMP1" \
         && cleanup

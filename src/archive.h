@@ -5,6 +5,7 @@
 #include "settings.h"
 #include "utils.h"
 #include <fstream>
+#include <mutex>
 
 namespace fqzcomp28 {
 class Archive {
@@ -31,7 +32,7 @@ public:
   bool readBlock(CompressedBuffersSrc &cb);
 
   void flush() { fs_.flush(); };
-  auto size() const { return bytes_written; }
+  [[nodiscard]] auto size() const { return bytes_written; }
 
   const DatasetMeta &meta() const { return meta_; }
 
@@ -58,6 +59,7 @@ private:
   uint64_t bytes_written = 0;
   std::fstream fs_;
   DatasetMeta meta_;
+  std::mutex mtx_;
 };
 
 } // namespace fqzcomp28

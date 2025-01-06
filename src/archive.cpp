@@ -25,6 +25,8 @@ void Archive::writeArchiveHeader() {
 void Archive::readArchiveHeader() { meta_ = DatasetMeta::loadFromStream(fs_); }
 
 void Archive::writeBlock(const CompressedBuffersDst &cb) {
+  std::lock_guard guard(mtx_);
+
   /* these 2 number can be deduced,
    * but let's just store them to simplify decompression */
   writeInteger(cb.original_size.total);
