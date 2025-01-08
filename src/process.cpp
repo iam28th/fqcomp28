@@ -16,15 +16,17 @@ int startProgram(int argc, char **argv) {
   CLI::App app;
   fqcomp28::addOptions(&app);
 
+  int ret = 0;
+
   try {
     app.parse(argc, argv);
   } catch (const CLI::CallForHelp &e) {
-    return app.exit(e);
+    ret = app.exit(e);
   } catch (const CLI::ParseError &e) {
-    return app.exit(e);
+    ret = app.exit(e);
   }
 
-  return 0;
+  return ret;
 }
 
 void processReads() {
