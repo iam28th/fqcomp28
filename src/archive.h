@@ -43,8 +43,7 @@ public:
    * @param sample_size_bytes How many bytes to process for calculating meta
    */
   Archive(const path_t archive_path, const path_t file_to_gather_meta,
-          const std::size_t sample_size_bytes =
-              Settings::getDefaultsInstance()->sample_chunk_size());
+          const std::size_t sample_size_bytes);
 
   void writeBlock(const CompressedBuffersDst &cb);
   bool readBlock(CompressedBuffersSrc &cb);

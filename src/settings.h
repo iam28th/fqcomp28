@@ -32,8 +32,8 @@ public:
     path_t mates2;
     path_t archive;
     unsigned n_threads = 1;
-    unsigned read_chunk_size_Mb = 32;
-    unsigned sample_chunk_size_Mb = 1;
+    unsigned read_chunk_size_Mb = 256;
+    unsigned sample_chunk_size_Mb = 128;
     bool verbose = false;
     Command cmd = Command::COMPRESS;
   } non_storable;

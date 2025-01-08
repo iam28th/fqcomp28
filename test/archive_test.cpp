@@ -24,7 +24,7 @@ struct ArchiveTester {
     const path_t input = "test/data/SRR065390_sub_1.fastq";
     const path_t archive_path = "test_archive_header.fqz";
 
-    Archive compr_archive(archive_path, input);
+    Archive compr_archive(archive_path, input, set->sample_chunk_size());
     FastqReader reader(input, set->reading_chunk_size());
     FastqChunk chunk;
 
@@ -51,4 +51,5 @@ struct ArchiveTester {
 } // namespace fqcomp28
 
 using namespace fqcomp28;
+
 TEST_CASE("Archive header") { ArchiveTester::header(); }

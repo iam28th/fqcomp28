@@ -33,7 +33,7 @@ void processReads() {
   const auto *set = Settings::getInstance();
   const auto mates1 = set->non_storable.mates1;
 
-  Archive archive(set->non_storable.archive, mates1);
+  Archive archive(set->non_storable.archive, mates1, set->sample_chunk_size());
   FastqReader reader(mates1, set->reading_chunk_size());
 
   const unsigned n_threads = set->non_storable.n_threads;
