@@ -11,15 +11,15 @@ CLI::App *createDecompressSubcommand(CLI::App *app);
 namespace fqcomp28 {
 
 void addOptions(CLI::App *app) {
-  app->require_subcommand(1, 1);
+  app->require_subcommand(1);
   app->option_defaults()->always_capture_default();
   app->set_help_all_flag("--help-all", "Expand all help");
 
   auto *c = createCompressSubcommand(app);
   auto *d = createDecompressSubcommand(app);
 
-  c->parse_complete_callback(processReads);
-  d->parse_complete_callback(fqcomp28::processArchiveParts);
+  c->callback(processReads);
+  d->callback(processArchiveParts);
 }
 } // namespace fqcomp28
 
