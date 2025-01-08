@@ -3,7 +3,7 @@
 #include <string_view>
 #include <vector>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 static_assert(std::is_same_v<uint64_t, std::size_t>);
 
@@ -51,4 +51,4 @@ struct FastqChunk {
   }
 };
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

@@ -1,7 +1,7 @@
 #include "archive.h"
 #include "utils.h"
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 Archive::Archive(const path_t archive_path)
     : fs_(archive_path, std::ios_base::binary | std::ios_base::in) {
@@ -174,4 +174,4 @@ void Archive::readBytes(std::vector<std::byte> &bytes) {
   fs_.read(to_char_ptr(bytes.data()), sz);
 }
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

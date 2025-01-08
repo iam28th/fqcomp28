@@ -3,7 +3,7 @@
 #include "fastq_io.h"
 #include <fstream>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 void loadFileContents(path_t const path, std::vector<char> &buf) {
   const auto fsize = std::filesystem::file_size(path);
@@ -18,11 +18,11 @@ std::vector<char> loadFileContents(path_t const path) {
   return buf;
 }
 
-FastqChunk loadFastqFileContents(const fqzcomp28::path_t path) {
+FastqChunk loadFastqFileContents(const fqcomp28::path_t path) {
   FastqChunk chunk;
   chunk.raw_data = loadFileContents(path);
   FastqReader::parseRecords(chunk);
   return chunk;
 }
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

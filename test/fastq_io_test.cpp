@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <ranges>
 
-using namespace fqzcomp28;
+using namespace fqcomp28;
 
 namespace fs = std::filesystem;
 

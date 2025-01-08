@@ -1,6 +1,6 @@
 #include "fse_quality.h"
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 void QualityEncoder::encodeRecord(const FastqRecord &r) {
   /** symbol to encode */
@@ -95,4 +95,4 @@ FSE_Quality::calculateFreqTable(const FastqChunk &chunk) {
 
   return makeNormalizedFreqTable<FreqTableT>(*counts);
 }
-}; // namespace fqzcomp28
+}; // namespace fqcomp28

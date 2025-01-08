@@ -3,7 +3,7 @@
 #include "test_utils.h"
 #include <catch2/catch_test_macros.hpp>
 
-using namespace fqzcomp28;
+using namespace fqcomp28;
 
 /** compress, decompress back & check integrity */
 TEST_CASE("memcompress") {

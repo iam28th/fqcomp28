@@ -1,9 +1,10 @@
 #pragma once
+#include "defs.h"
+#include "utils.h"
 #include <cstddef>
-#include <filesystem>
 
-namespace fqzcomp28 {
-enum class Command { COMPRESS, DECOMPRESS, TEST };
+namespace fqcomp28 {
+enum class Command { COMPRESS, DECOMPRESS };
 
 class Settings {
 public:
@@ -27,27 +28,24 @@ public:
   } storable;
 
   struct { /* not required for decompression */
-    using path = std::filesystem::path;
-    path mates1;
-    path mates2;
-    path archive;
+    path_t mates1;
+    path_t mates2;
+    path_t archive;
     unsigned n_threads = 1;
-    unsigned read_chunk_size_Mb = 1;
-    unsigned sample_chunk_size_Mb = read_chunk_size_Mb;
+    unsigned read_chunk_size_Mb = 32;
+    unsigned sample_chunk_size_Mb = 1;
     bool verbose = false;
-    Command cmd = Command::TEST;
+    Command cmd = Command::COMPRESS;
   } non_storable;
 
   [[nodiscard]] bool is_pe() const { return !non_storable.mates2.empty(); }
 
   [[nodiscard]] std::size_t reading_chunk_size() const {
-    return static_cast<std::size_t>(non_storable.read_chunk_size_Mb) * 1024 *
-           1024;
+    return mbToBytes(non_storable.read_chunk_size_Mb);
   }
 
   [[nodiscard]] std::size_t sample_chunk_size() const {
-    return static_cast<std::size_t>(non_storable.sample_chunk_size_Mb) * 1024 *
-           1024;
+    return mbToBytes(non_storable.sample_chunk_size_Mb);
   }
 };
-} // namespace fqzcomp28
+} // namespace fqcomp28

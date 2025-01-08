@@ -17,7 +17,7 @@ extern "C" {
 #include <compress/hist.h>
 }
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 inline std::vector<FSE_FUNCTION_TYPE>
 createCTableBuildWksp(const unsigned maxSymbolValue, const unsigned tableLog) {
@@ -177,4 +177,4 @@ std::unique_ptr<FreqTableT> makeNormalizedFreqTable(const Counts &counts)
   return ft;
 };
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

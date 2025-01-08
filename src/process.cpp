@@ -9,12 +9,12 @@
 #include <thread>
 #include <vector>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
-/** fqzcomp28 entry point */
+/** fqcomp28 entry point */
 int startProgram(int argc, char **argv) {
   CLI::App app;
-  fqzcomp28::addOptions(&app);
+  fqcomp28::addOptions(&app);
 
   try {
     app.parse(argc, argv);
@@ -101,4 +101,4 @@ void processArchiveParts() {
     });
   }
 }
-} // namespace fqzcomp28
+} // namespace fqcomp28

@@ -4,7 +4,7 @@
 #include <fstream>
 #include <mutex>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 /** Reads data from a single .fastq file */
 class FastqReader {
@@ -56,4 +56,4 @@ private:
   std::condition_variable cv_;
 };
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

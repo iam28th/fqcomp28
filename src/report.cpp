@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 namespace {
 double calc_ratio(std::size_t original, std::size_t compressed) {
@@ -123,4 +123,4 @@ CompressedStats::data_section_size(const long n_string_fields) const {
   ret += n_blocks * block_meta;
   return ret;
 }
-}; // namespace fqzcomp28
+}; // namespace fqcomp28

@@ -7,7 +7,7 @@
 #include <fstream>
 #include <mutex>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 /**
  * Archive structure:
  * - Number of data blocks (uin32_t)
@@ -30,7 +30,8 @@ class Archive {
   constexpr static std::streamoff OFFSET_META = sizeof(uint32_t);
 
 public:
-  /** Creates Archive to read compressed data from an existing fqzcomp28 file */
+  /** Creates Archive to read compressed data from an existing fqcomp28     file
+   */
   explicit Archive(const path_t archive_path);
 
   /**
@@ -96,4 +97,4 @@ private:
   std::mutex mtx_;
 };
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

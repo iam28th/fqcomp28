@@ -6,7 +6,7 @@
 #include <cstring>
 #include <stdexcept>
 
-namespace fqzcomp28::headers {
+namespace fqcomp28::headers {
 
 field_data_t fieldFromAscii(std::string_view::iterator s,
                             std::string_view::iterator e, FieldType typ) {
@@ -131,4 +131,4 @@ unsigned FieldStorageSrc::loadNextNumeric(char *dst, numeric_t &prev_val) {
   assert(res.ec == std::errc());
   return static_cast<unsigned>(res.ptr - dst);
 }
-} // namespace fqzcomp28::headers
+} // namespace fqcomp28::headers

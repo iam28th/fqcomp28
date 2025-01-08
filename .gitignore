@@ -1,3 +1,5 @@
 .cache
-fqzcomp28
+fqcomp28
 build/*
+.nvimrc
+.gdbinit

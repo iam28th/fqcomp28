@@ -1,7 +1,7 @@
 #pragma once
 #include <cstddef>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 /**
  * Compresses src with generic compression algorithm, and writes results to dst
@@ -27,4 +27,4 @@ std::size_t memcompress(std::byte *dst, const std::byte *src,
 std::size_t memdecompress(std::byte *dst, const std::size_t dst_size,
                           const std::byte *src, const std::size_t src_size);
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

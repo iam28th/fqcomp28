@@ -20,7 +20,7 @@ add_executable(unit_tests
 )
 
 target_link_libraries(unit_tests PRIVATE
-                      fqzcomp28Core Catch2::Catch2WithMain)
+                      fqcomp28Core Catch2::Catch2WithMain)
 
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(Catch)

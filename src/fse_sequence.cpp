@@ -3,7 +3,7 @@
 #include "utils.h"
 #include <ranges>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 constexpr std::array<unsigned, 128> base2bits_arr = []() {
   std::array<unsigned, 128> ret;
@@ -163,4 +163,4 @@ FSE_Sequence::calculateFreqTable(const FastqChunk &chunk) {
   return makeNormalizedFreqTable<FreqTableT>(counts);
 }
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

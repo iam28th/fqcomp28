@@ -3,8 +3,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <random>
 
-using namespace fqzcomp28;
-using namespace fqzcomp28::headers;
+using namespace fqcomp28;
+using namespace fqcomp28::headers;
 
 /**
  * split a header into fields and deduce their types

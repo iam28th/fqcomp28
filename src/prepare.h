@@ -5,7 +5,7 @@
 #include "headers.h"
 #include <algorithm>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 /**
  * Contains information required for compression and decompression
@@ -56,4 +56,4 @@ bool operator==(const DatasetMeta &lhs, const DatasetMeta &rhs);
 
 DatasetMeta analyzeDataset(path_t fastq_file, std::size_t sample_size_bytes);
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

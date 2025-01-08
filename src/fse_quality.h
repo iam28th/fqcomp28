@@ -1,9 +1,10 @@
 #pragma once
 #include "defs.h"
 #include "fse_common.hpp"
+#include "utils.h"
 #include <memory>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 /* Quality context for the current symbol is:
  - previous symbol (6 bits)
  - max of symbols at offsets -2 and -3 (6 bits)
@@ -82,4 +83,4 @@ public:
   /** assumes that record fields readlen and qualp are correctly set */
   void decodeRecord(FastqRecord &);
 };
-} // namespace fqzcomp28
+} // namespace fqcomp28

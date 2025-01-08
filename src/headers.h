@@ -7,7 +7,7 @@
 #include <variant>
 #include <vector>
 
-namespace fqzcomp28::headers {
+namespace fqcomp28::headers {
 
 constexpr std::size_t FIELDLEN_MAX = 255;
 
@@ -107,4 +107,4 @@ struct FieldStorageSrc : public FieldStorage {
 /** Holds a certain field of multiple headers after general compression */
 using CompressedFieldStorage = FieldStorage;
 
-} // namespace fqzcomp28::headers
+} // namespace fqcomp28::headers

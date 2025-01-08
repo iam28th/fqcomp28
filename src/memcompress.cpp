@@ -36,7 +36,7 @@ int paramFeatures() {
 }
 /// end of copy-paste...
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 std::size_t memcompress(std::byte *dst, const std::byte *src,
                         const std::size_t src_size) {
@@ -64,4 +64,4 @@ std::size_t memdecompress(std::byte *dst, const std::size_t dst_size,
   assert(ret == LIBBSC_NO_ERROR);
   return dst_size;
 }
-} // namespace fqzcomp28
+} // namespace fqcomp28

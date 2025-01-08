@@ -8,7 +8,7 @@ CLI::App *createCompressSubcommand(CLI::App *app);
 CLI::App *createDecompressSubcommand(CLI::App *app);
 } // namespace
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 void addOptions(CLI::App *app) {
   app->require_subcommand(1, 1);
@@ -19,13 +19,13 @@ void addOptions(CLI::App *app) {
   auto *d = createDecompressSubcommand(app);
 
   c->parse_complete_callback(processReads);
-  d->parse_complete_callback(fqzcomp28::processArchiveParts);
+  d->parse_complete_callback(fqcomp28::processArchiveParts);
 }
-} // namespace fqzcomp28
+} // namespace fqcomp28
 
 namespace {
 void addCommonOptions(CLI::App *subcommand) {
-  auto *set = fqzcomp28::Settings::getInstance();
+  auto *set = fqcomp28::Settings::getInstance();
   subcommand->add_option("-t,--threads", set->non_storable.n_threads,
                          "number of processing threads");
   subcommand->add_flag("--verbose", set->non_storable.verbose,
@@ -33,7 +33,7 @@ void addCommonOptions(CLI::App *subcommand) {
 }
 
 CLI::App *createCompressSubcommand(CLI::App *app) {
-  auto *set = fqzcomp28::Settings::getInstance();
+  auto *set = fqcomp28::Settings::getInstance();
   auto *cmd = app->add_subcommand("c", "run compression");
 
   cmd->add_option("--i1,--input1", set->non_storable.mates1,
@@ -48,12 +48,22 @@ CLI::App *createCompressSubcommand(CLI::App *app) {
 #endif
   cmd->add_option("-o,--output", set->non_storable.archive)->required();
 
+  cmd->add_option("-S,--sample-size-Mb", set->non_storable.sample_chunk_size_Mb,
+                  "size of a portion of the file (in megabytes) used to "
+                  "calculate frequency tables")
+      ->check(CLI::NonNegativeNumber);
+
+  cmd->add_option(
+         "-R,--reading-size-Mb", set->non_storable.read_chunk_size_Mb,
+         "size of blocks (in megabytes) used for reading and compression")
+      ->check(CLI::NonNegativeNumber);
+
   addCommonOptions(cmd);
   return cmd;
 }
 
 CLI::App *createDecompressSubcommand(CLI::App *app) {
-  auto *set = fqzcomp28::Settings::getInstance();
+  auto *set = fqcomp28::Settings::getInstance();
   auto *cmd = app->add_subcommand("d", "run decompression");
 
   cmd->add_option("-i,--input", set->non_storable.archive,

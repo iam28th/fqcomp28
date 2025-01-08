@@ -1,9 +1,9 @@
 #pragma once
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 /* runs compression */
 void processReads();
 
 /* runs decompression */
 void processArchiveParts();
-} // namespace fqzcomp28
+} // namespace fqcomp28

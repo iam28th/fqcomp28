@@ -1,7 +1,7 @@
 #pragma once
 #include <cassert>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 // TODO: use table
 constexpr inline unsigned base2bits(const char base) {
@@ -36,4 +36,4 @@ constexpr inline char bits2base(const unsigned bits) {
   }
 }
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

@@ -4,9 +4,9 @@
 #include "workspace.h"
 #include <catch2/catch_test_macros.hpp>
 
-using namespace fqzcomp28;
+using namespace fqcomp28;
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 struct WorkspaceTester {
   static void encodeHeader() {
     const path_t input = "test/data/SRR065390_sub_1.fastq";
@@ -69,7 +69,7 @@ struct WorkspaceTester {
   }
 };
 
-} // namespace fqzcomp28
+} // namespace fqcomp28
 
 TEST_CASE("EncodingContext::{en,de}codeHeader") {
   WorkspaceTester::encodeHeader();

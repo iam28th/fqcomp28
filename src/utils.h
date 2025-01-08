@@ -5,7 +5,7 @@
 #include <iosfwd>
 #include <vector>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 /**
  * If the stream's state is good, do nothing; otherwise throw system_error
@@ -20,6 +20,11 @@ template <class Target, class Source> Target narrow_cast(Source v) {
   if (static_cast<Source>(r) != v) [[unlikely]]
     throw std::runtime_error("narrow_cast<>() failed");
   return r;
+}
+
+/** Converts from megabytes to bytes */
+inline std::size_t mbToBytes(unsigned mb) {
+  return static_cast<std::size_t>(mb) * 1024 * 1024;
 }
 
 /**
@@ -57,4 +62,4 @@ template <TriviallyCopyable T> auto to_char_ptr(T *p) {
   return reinterpret_cast<char *>(p);
 }
 
-}; // namespace fqzcomp28
+}; // namespace fqcomp28

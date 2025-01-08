@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
-project(fqzcomp28 LANGUAGES CXX C ASM)
+project(fqcomp28 LANGUAGES CXX C ASM)
 
 # C++20 required (becuase of SeqAn3)
 set(CMAKE_CXX_STANDARD 20)

@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstring>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 Workspace::Workspace(const DatasetMeta *meta)
     : meta_(meta), fmt_(meta->header_fmt),
@@ -280,4 +280,4 @@ void CompressionWorkspace::updateStats(const CompressedBuffersDst &cbs) {
       csize += field.content.size();
   }
 }
-} // namespace fqzcomp28
+} // namespace fqcomp28

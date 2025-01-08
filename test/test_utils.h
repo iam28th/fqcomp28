@@ -3,14 +3,14 @@
 #include "defs.h"
 #include "headers.h"
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 /**
  * function to load entire file in memory
  */
-void loadFileContents(const fqzcomp28::path_t path, std::vector<char> &data);
-std::vector<char> loadFileContents(const fqzcomp28::path_t path);
-FastqChunk loadFastqFileContents(const fqzcomp28::path_t path);
+void loadFileContents(const fqcomp28::path_t path, std::vector<char> &data);
+std::vector<char> loadFileContents(const fqcomp28::path_t path);
+FastqChunk loadFastqFileContents(const fqcomp28::path_t path);
 
 inline headers::FieldStorageSrc
 convertToSrcStorage(headers::FieldStorageDst &&dst) {
@@ -47,4 +47,4 @@ inline CompressedBuffersSrc convertToSrcBuffers(CompressedBuffersDst &&in) {
   return src;
 }
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

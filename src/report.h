@@ -5,7 +5,7 @@
 #include <numeric>
 #include <vector>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 struct InputStats {
   std::size_t seq = 0;
@@ -69,4 +69,4 @@ struct CompressedStats {
 
 void printReport(const InputStats &, const CompressedStats &, const Archive &,
                  std::ostream &);
-} // namespace fqzcomp28
+} // namespace fqcomp28

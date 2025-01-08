@@ -3,7 +3,7 @@
 #include "workspace.h"
 #include <catch2/catch_test_macros.hpp>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 bool compressedPartEqual(const CompressedBuffersDst &dst,
                          const CompressedBuffersSrc &src) {
@@ -48,7 +48,7 @@ struct ArchiveTester {
     std::filesystem::remove_all(archive_path);
   }
 };
-} // namespace fqzcomp28
+} // namespace fqcomp28
 
-using namespace fqzcomp28;
+using namespace fqcomp28;
 TEST_CASE("Archive header") { ArchiveTester::header(); }

@@ -2,7 +2,7 @@
 #include "fastq_io.h"
 #include "utils.h"
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 bool operator==(const DatasetMeta &lhs, const DatasetMeta &rhs) {
   return lhs.first_header == rhs.first_header && *lhs.ft_seq == *rhs.ft_seq &&
@@ -46,4 +46,4 @@ DatasetMeta analyzeDataset(path_t fastq_file, std::size_t sample_size_bytes) {
   return DatasetMeta(chunk);
 }
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

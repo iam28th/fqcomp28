@@ -4,7 +4,7 @@
 #include "fse_common.hpp"
 #include "sequtils.h"
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 class FSE_Sequence {
 public:
@@ -110,4 +110,4 @@ private:
   std::vector<readlen_t> npos_buffer_;
 };
 
-} // namespace fqzcomp28
+} // namespace fqcomp28

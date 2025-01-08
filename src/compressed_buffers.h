@@ -2,7 +2,7 @@
 #include "headers.h"
 #include <vector>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 
 /**
  * helper struct to load original sizes into at decompression
@@ -99,4 +99,4 @@ public:
     index = {};
   }
 };
-} // namespace fqzcomp28
+} // namespace fqcomp28

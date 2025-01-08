@@ -5,7 +5,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <ranges>
 
-using namespace fqzcomp28;
+using namespace fqcomp28;
 
 std::vector<char> getConcatenatedSequences(const FastqChunk &chunk) {
   std::vector<char> ret;

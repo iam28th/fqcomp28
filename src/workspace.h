@@ -6,7 +6,7 @@
 #include "report.h"
 #include <vector>
 
-namespace fqzcomp28 {
+namespace fqcomp28 {
 class Workspace {
 protected:
   /**
@@ -133,4 +133,4 @@ private:
   }
 };
 
-} // namespace fqzcomp28
+} // namespace fqcomp28
