@@ -1,5 +1,7 @@
 .cache
 fqcomp28
 build/*
+benchmark/fqzcomp*
+benchmark/*.csv
 .nvimrc
 .gdbinit
