@@ -32,8 +32,8 @@ def measure_tool(tool: Tool, dataset) -> Result:
     ret = Result()
     ret.name = tool.name
 
-    cproc = run_process(tool.ccmd, gnu_time=True)
-    dproc = run_process(tool.dcmd, gnu_time=True)
+    cproc = run_process(tool.ccmd, gnu_time=True, verbose=True)
+    dproc = run_process(tool.dcmd, gnu_time=True, verbose=True)
 
     ret.ctime = get_elapsed_time(cproc)
     ret.dtime = get_elapsed_time(dproc)
@@ -49,9 +49,11 @@ def calc_total_cr(dataset: str, archive: str) -> float:
     return round(path.getsize(dataset) / path.getsize(archive), 3)
 
 
-def run_process(cmd: str, gnu_time=True) -> sp.CompletedProcess:
+def run_process(cmd: str, gnu_time=True, verbose=True) -> sp.CompletedProcess:
     if gnu_time:
         cmd = "/usr/bin/time -v " + cmd
+    if verbose:
+        print(cmd)
     return sp.run(cmd, capture_output=True, check=True, shell=True)
 
 
