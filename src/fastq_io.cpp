@@ -7,14 +7,18 @@
 namespace fqzcomp28 {
 FastqReader::FastqReader(std::string mates1, std::size_t reading_size)
     : reading_size_(reading_size), ifs1_(mates1),
-      bytes_left1_(std::filesystem::file_size(mates1)), bytes_left2_(0) {};
+      bytes_left1_(std::filesystem::file_size(mates1)), bytes_left2_(0) {
+  checkStreamState(ifs1_, mates1);
+};
 
+#if 0
 FastqReader::FastqReader(std::string mates1, std::string mates2,
                          std::size_t reading_size)
     : FastqReader(mates1, reading_size) {
   ifs2_.open(mates2);
   bytes_left2_ = std::filesystem::file_size(mates2);
 }
+#endif
 
 bool FastqReader::readNextChunk(FastqChunk &chunk) {
   /* safe to call before lock,
@@ -120,7 +124,9 @@ std::size_t FastqReader::parseRecords(FastqChunk &chunk) {
   }
 }
 
-FastqWriter::FastqWriter(std::string mates1) : ofs1_(mates1) {}
+FastqWriter::FastqWriter(std::string mates1) : ofs1_(mates1) {
+  checkStreamState(ofs1_, mates1);
+}
 
 void FastqWriter::writeChunk(FastqChunk const &chunk) {
   std::unique_lock guard(mtx_);

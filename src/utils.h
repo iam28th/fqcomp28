@@ -2,9 +2,16 @@
 #include "defs.h"
 #include <cassert>
 #include <cstring>
+#include <iosfwd>
 #include <vector>
 
 namespace fqzcomp28 {
+
+/**
+ * If the stream's state is good, do nothing; otherwise throw system_error
+ * @param path - Path to the file associated with the stream
+ */
+void checkStreamState(std::ios &, path_t path);
 
 /** (c) The C++ Programming Language, section 11.5 */
 template <class Target, class Source> Target narrow_cast(Source v) {

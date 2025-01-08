@@ -40,10 +40,12 @@ CLI::App *createCompressSubcommand(CLI::App *app) {
                   "path to a fastq file with first mates")
       ->check(CLI::ExistingFile)
       ->required();
+  // TODO: add PE support
+#if 0
   cmd->add_option("--i2,--input2", set->non_storable.mates2,
                   "path to a fastq file with second mates")
       ->check(CLI::ExistingFile);
-
+#endif
   cmd->add_option("-o,--output", set->non_storable.archive)->required();
 
   addCommonOptions(cmd);

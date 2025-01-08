@@ -10,8 +10,10 @@ namespace fqzcomp28 {
 class FastqReader {
 public:
   FastqReader(std::string mates1, std::size_t reading_size);
+#if 0
   /** This ctor is more for the future... */
   FastqReader(std::string mates1, std::string mates2, std::size_t reading_size);
+#endif
 
   /** @return true if reading was succesfull */
   bool readNextChunk(FastqChunk &chunk);

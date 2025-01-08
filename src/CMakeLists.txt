@@ -3,14 +3,15 @@ include(${CMAKE_SOURCE_DIR}/cmake/Dependencies.cmake)
 add_library(fqzcomp28Core OBJECT
     app.cpp
     archive.cpp
-    fse_quality.cpp
     fastq_io.cpp
+    fse_quality.cpp
     fse_sequence.cpp
     headers.cpp
     memcompress.cpp
     prepare.cpp
     process.cpp
     report.cpp
+    utils.cpp
     workspace.cpp
 )
 

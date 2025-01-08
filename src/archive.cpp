@@ -5,9 +5,7 @@ namespace fqzcomp28 {
 
 Archive::Archive(const path_t archive_path)
     : fs_(archive_path, std::ios_base::binary | std::ios_base::in) {
-
-  if (!fs_)
-    throw std::system_error(errno, std::generic_category(), archive_path);
+  checkStreamState(fs_, archive_path);
 
   readArchiveHeader();
 }
@@ -15,11 +13,9 @@ Archive::Archive(const path_t archive_path)
 Archive::Archive(const path_t archive_path, const path_t file_to_gather_meta,
                  const std::size_t sample_size_bytes)
     : fs_(archive_path, std::ios_base::binary | std::ios_base::out) {
-  if (!fs_)
-    throw std::system_error(errno, std::generic_category(), archive_path);
+  checkStreamState(fs_, archive_path);
 
   meta_ = analyzeDataset(file_to_gather_meta, sample_size_bytes);
-
   writeMeta();
 }
 
