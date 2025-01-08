@@ -1,5 +1,4 @@
 #include "fse_sequence.h"
-#include "sequtils.h"
 #include "utils.h"
 #include <ranges>
 
@@ -12,6 +11,16 @@ constexpr std::array<unsigned, 128> base2bits_arr = []() {
   ret['C'] = 0b01;
   ret['G'] = 0b10;
   ret['T'] = 0b11;
+  return ret;
+}();
+
+constexpr std::array<char, 4> bits2base_arr = []() {
+  std::array<char, 4> ret;
+  ret.fill(std::numeric_limits<char>::max());
+  ret[0b00] = 'A';
+  ret[0b01] = 'C';
+  ret[0b10] = 'G';
+  ret[0b11] = 'T';
   return ret;
 }();
 
@@ -126,7 +135,7 @@ void SequenceDecoder::decodeRecord(FastqRecord &r, CompressedBuffersSrc &cbs) {
     const unsigned sym = FSE_decodeSymbol(states_.data() + ctx, &bitStream_);
     BIT_reloadDStream(&bitStream_);
 
-    r.seqp[i] = bits2base(sym);
+    r.seqp[i] = bits2base_arr[sym];
     ctx = addSymUpper(ctx, sym);
 
     if ((n_added != n_count) && (i == prev_n_pos + npos_buffer_[n_added])) {
