@@ -10,7 +10,7 @@ FetchContent_MakeAvailable(Catch2)
 
 add_executable(unit_tests
     archive_test.cpp
-    encoding_context_test.cpp
+    workspace_test.cpp
     fastq_io_test.cpp
     fse_quality_test.cpp
     fse_sequence_test.cpp

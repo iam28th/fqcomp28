@@ -59,6 +59,7 @@ Checks: >
     -openmp-*,
     -performance-enum-size,
     -performance-unnecessary-value-param,
+    -readability-avoid-unconditional-preprocessor-if,
     -readability-redundant-inline-specifier,
     -readability-isolate-declaration,
     -readability-uppercase-literal-suffix,

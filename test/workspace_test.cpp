@@ -71,10 +71,6 @@ struct WorkspaceTester {
 
 } // namespace fqcomp28
 
-TEST_CASE("EncodingContext::{en,de}codeHeader") {
-  WorkspaceTester::encodeHeader();
-}
+TEST_CASE("Workspace::encodeHeader") { WorkspaceTester::encodeHeader(); }
 
-TEST_CASE("EncodingContext::{en,de}codeChunk") {
-  WorkspaceTester::encodeChunk();
-}
+TEST_CASE("Workspace::encodeChunk") { WorkspaceTester::encodeChunk(); }
