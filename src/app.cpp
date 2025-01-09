@@ -71,14 +71,9 @@ CLI::App *createDecompressSubcommand(CLI::App *app) {
       ->check(CLI::ExistingFile)
       ->required();
 
-  auto *o1 = cmd->add_option(
-      "--o1,--output1", set->non_storable.mates1,
-      "path to output mates1 (if both --o1 and --o2 are ommitted, "
-      "prints to stdout)");
-
-  cmd->add_option("--o2,--output2", set->non_storable.mates2,
-                  "path to output mates2")
-      ->needs(o1);
+  cmd->add_option("--o1,--output1", set->non_storable.mates1,
+                  "path to output mates1 (if both --o1 and --o2 are ommitted, "
+                  "prints to stdout)");
 
   addCommonOptions(cmd);
   return cmd;
