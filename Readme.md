@@ -15,7 +15,7 @@ cmake --build build
 
 ```bash
 ./fqcomp28 c --input reads.fastq --output archive.fqc --threads 4
-./fqcomp28 c --input archive.fqc --output1 decompressed.fastq --threads 4
+./fqcomp28 d --input archive.fqc --output1 decompressed.fastq --threads 4
 ```
 
 # Comparison with fqzcomp{4,5}
