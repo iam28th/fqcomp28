@@ -14,11 +14,11 @@ std::vector<char> getConcatenatedSequences(const FastqChunk &chunk) {
   return ret;
 }
 
-TEST_CASE("Sequence encoding (without Ns)") {
+TEST_CASE("FSE Sequence") {
   const path_t inp_path = "test/data/SRR065390_sub_1.fastq";
 
   FastqChunk chunk = loadFastqFileContents(inp_path);
-  auto ft = FSE_Sequence::calculateFreqTable(chunk);
+  const auto ft = FSE_Sequence::calculateFreqTable(chunk);
 
   const std::vector<char> sequences = getConcatenatedSequences(chunk);
   const std::size_t input_size = chunk.tot_reads_length;
