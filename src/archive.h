@@ -2,7 +2,6 @@
 #include "compressed_buffers.h"
 #include "defs.h"
 #include "prepare.h"
-#include "settings.h"
 #include "utils.h"
 #include <fstream>
 #include <mutex>
@@ -90,7 +89,7 @@ private:
   }
 
   std::vector<BlockInfo> index_;
-  std::size_t blocks_processed_;
+  std::size_t blocks_processed_ = 0;
   std::fstream fs_;
   DatasetMeta meta_;
   std::mutex mtx_;
