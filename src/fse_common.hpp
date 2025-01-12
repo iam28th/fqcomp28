@@ -37,6 +37,7 @@ protected:
   template <typename T> using fse_array = FreqTableT::template fse_array<T>;
   fse_array<FSE_CState_t> states_;
   fse_array<FSE_CTable *> tables_;
+  std::vector<FSE_CTable> tables_data_;
 
   explicit FSE_Encoder(const FreqTableT *ft) : ft_(ft) {
     /* according to fse.h, MAX_SYMBOL should be enough here
@@ -45,7 +46,18 @@ protected:
      * could be because some frequency tables are "empty") */
     auto wksp = createCTableBuildWksp(ft_->MAX_SYMBOL + 1, ft_->max_log);
 
+    std::size_t total_tables_size = 0;
+    for (unsigned ctx = 0; ctx < FreqTableT::N_MODELS; ++ctx)
+      total_tables_size += ft_->calcCTableSize(ctx);
+
+    tables_data_.resize(total_tables_size);
+
+    std::size_t offset = 0;
+
     for (unsigned ctx = 0; ctx < FreqTableT::N_MODELS; ++ctx) {
+      tables_[ctx] = tables_data_.data() + offset;
+      offset += ft_->calcCTableSize(ctx);
+
       tables_[ctx] = FSE_createCTable(FreqTableT::MAX_SYMBOL, ft_->logs[ctx]);
       assert(narrow_cast<long int>(wksp.size()) >= (1 << ft_->max_log));
 
@@ -95,13 +107,21 @@ protected:
   template <typename T> using fse_array = FreqTableT::template fse_array<T>;
   fse_array<FSE_DState_t> states_;
   fse_array<FSE_DTable *> tables_;
+  std::vector<FSE_DTable> tables_data_;
 
   explicit FSE_Decoder(const FreqTableT *ft) : ft_(ft) {
     std::vector<unsigned> wksp(
         FSE_BUILD_DTABLE_WKSP_SIZE_U32(ft->max_log, FreqTableT::MAX_SYMBOL));
 
+    std::size_t total_tables_size = 0;
+    for (unsigned ctx = 0; ctx < FreqTableT::N_MODELS; ++ctx)
+      total_tables_size += ft_->calcDTableSize(ctx);
+    tables_data_.resize(total_tables_size);
+
+    std::size_t offset = 0;
     for (unsigned ctx = 0; ctx < FreqTableT::N_MODELS; ++ctx) {
-      tables_[ctx] = FSE_createDTable(ft_->logs[ctx]);
+      tables_[ctx] = tables_data_.data() + offset;
+      offset += ft_->calcDTableSize(ctx);
 
       [[maybe_unused]] const std::size_t ret = FSE_buildDTable_wksp(
           tables_[ctx], ft_->norm_counts[ctx].data(), FreqTableT::MAX_SYMBOL,
@@ -109,11 +129,6 @@ protected:
           wksp.size() * sizeof(decltype(wksp)::value_type));
       assert(ret == 0);
     }
-  }
-
-  ~FSE_Decoder() {
-    for (FSE_DTable *dt : tables_)
-      FSE_freeDTable(dt);
   }
 
 public:
@@ -147,6 +162,18 @@ template <unsigned N_MODELS_, unsigned ALPHABET_SIZE_> struct FreqTable {
 
   fse_array<unsigned> logs;
   unsigned max_log;
+
+  [[nodiscard]] std::size_t calcCTableSize(unsigned ctx) const {
+    const unsigned log =
+        std::min<unsigned>(logs[ctx], FSE_TABLELOG_ABSOLUTE_MAX);
+    return FSE_CTABLE_SIZE_U32(log, MAX_SYMBOL);
+  }
+
+  [[nodiscard]] std::size_t calcDTableSize(unsigned ctx) const {
+    const unsigned log =
+        std::min<unsigned>(logs[ctx], FSE_TABLELOG_ABSOLUTE_MAX);
+    return FSE_DTABLE_SIZE_U32(log);
+  };
 
   bool operator==(const FreqTable &other) const = default;
 };
