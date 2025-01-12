@@ -1,7 +1,6 @@
 #include "fse_sequence.h"
 #include "utils.h"
 #include <ranges>
-
 namespace fqcomp28 {
 
 constexpr std::array<unsigned, 128> base2bits_arr = []() {
@@ -123,26 +122,23 @@ void SequenceDecoder::decodeRecord(FastqRecord &r, CompressedBuffersSrc &cbs) {
     assert(cbs.index.n_pos >= sizeof(readlen_t));
     npos = loadFromBytes<readlen_t>(cbs.n_pos,
                                     cbs.index.n_pos - sizeof(readlen_t));
-    assert(npos < r.length);
     cbs.index.n_pos -= sizeof(readlen_t);
   }
 
   unsigned ctx = INITIAL_CONTEXT;
 
-  readlen_t prev_n_pos = 0;
-  unsigned n_added = 0;
   for (unsigned short i = 0; i < r.length; ++i) {
     const unsigned sym = FSE_decodeSymbol(states_.data() + ctx, &bitStream_);
     BIT_reloadDStream(&bitStream_);
 
     r.seqp[i] = bits2base_arr[sym];
     ctx = addSymUpper(ctx, sym);
+  }
 
-    if ((n_added != n_count) && (i == prev_n_pos + npos_buffer_[n_added])) {
-      r.seqp[i] = 'N';
-      prev_n_pos = i;
-      n_added++;
-    }
+  readlen_t n_pos = 0;
+  for (unsigned i = 0, E = n_count; i < E; ++i) {
+    n_pos = n_pos + npos_buffer_[i];
+    r.seqp[n_pos] = 'N';
   }
 }
 
