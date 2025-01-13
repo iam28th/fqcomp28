@@ -4,7 +4,7 @@ Reimplementation of fqzcomp4 compression tool with caryless rangecoder replaced 
 
 ```bash
 git clone git@github.com:iam28th/fqcomp28.git
-cd fqzcomp28
+cd fqcomp28
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 
@@ -20,7 +20,7 @@ cmake --build build
 
 # Comparison with fqzcomp{4,5}
 
-`fqcomp28` seemingly offers a better compression ratio/speed tradeoff than `fqzcomp4` and `fqzcomp5` with default mode (-5), but looks inferior to faster modes of `fqzcomp5` (-3 and -1), particulary because of longer decompression times (the cause of which remains to be investigated).
+`fqcomp28` seemingly offers a better compression ratio/speed tradeoff than `fqzcomp4` and `fqzcomp5` with default mode (-5), but looks inferior to faster modes of `fqzcomp5` (-3 and -1), particulary because of longer decompression times (the cause of which is [under investigation](https://github.com/iam28th/fqcomp28/issues/1)).
 
 All tools noticeably outperform `gzip`/`pigz` in both speed and compression ratio.
 
