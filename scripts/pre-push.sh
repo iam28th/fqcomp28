@@ -1,17 +1,16 @@
 #!/usr/bin/bash
 
-# runs cmake configuration step & clang-tidy on staged files 
-# and stages these files again afterwards so that
-# commit contains formatted files
-# TODO: add unittests
+# 0. CMake configuration step
+# 1. clang-tidy on all .cpp files in src/
+# 2. Unittests via CTest
 
-# how many threads are used for clang-tidy & ctest 
+# how many threads are used for clang-tidy & ctest
 JOBS=4
 CMAKE_BINARY_DIR=./build
 
 echo "### pre-push start..."
 
-cmake -S . -B "$CMAKE_BINARY_DIR" 2> /dev/null 1>&2 
+cmake -S . -B "$CMAKE_BINARY_DIR" 2> /dev/null 1>&2
 if [[ $? -ne 0 ]]; then
         echo "error during build"
         exit 1
