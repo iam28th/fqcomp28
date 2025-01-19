@@ -62,9 +62,6 @@ protected:
       tables_[ctx] = tables_data_.data() + offset;
       offset += ft_->calcCTableSize(ctx);
 
-      tables_[ctx] = FSE_createCTable(FreqTableT::MAX_SYMBOL, ft_->logs[ctx]);
-      assert(narrow_cast<long int>(wksp.size()) >= (1 << ft_->max_log));
-
       [[maybe_unused]] const std::size_t ret = FSE_buildCTable_wksp(
           tables_[ctx], ft_->norm_counts[ctx].data(), FreqTableT::MAX_SYMBOL,
           ft_->logs[ctx], wksp.data(),
@@ -72,12 +69,6 @@ protected:
       assert(ret == 0);
     }
   }
-
-  ~FSE_Encoder() {
-    for (FSE_CTable *ct : tables_)
-      FSE_freeCTable(ct);
-  }
-
   /**
    * Init states and tie bitStream to dst;
    * dst should have been resized by the caller
