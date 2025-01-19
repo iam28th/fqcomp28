@@ -1,5 +1,9 @@
 #pragma once
+
+#ifndef NDEBUG
 #include "utils.h"
+#endif
+
 #include <array>
 #include <memory>
 #include <numeric>
