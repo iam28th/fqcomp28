@@ -10,7 +10,7 @@ CMAKE_BINARY_DIR=./build
 
 echo "### pre-push start..."
 
-cmake -S . -B "$CMAKE_BINARY_DIR" 2> /dev/null 1>&2
+cmake -S . -B "$CMAKE_BINARY_DIR" -DBUILD_TESTING=On 2> /dev/null 1>&2
 if [[ $? -ne 0 ]]; then
         echo "error during build"
         exit 1
