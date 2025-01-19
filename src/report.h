@@ -64,7 +64,7 @@ struct CompressedStats {
   }
 
   /** @param n_string_fields How many header fields are of type "STRING" */
-  [[nodiscard]] std::size_t data_section_size(const long n_string_fields) const;
+  [[nodiscard]] std::size_t data_section_size(long n_string_fields) const;
 };
 
 void printReport(const InputStats &, const CompressedStats &, const Archive &,

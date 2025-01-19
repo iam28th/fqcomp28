@@ -12,7 +12,7 @@ namespace fqcomp28 {
  * @return number of bytes written to dst (i.e., compressed size)
  */
 std::size_t memcompress(std::byte *dst, const std::byte *src,
-                        const std::size_t src_size);
+                        std::size_t src_size);
 
 /**
  * Decompresses src with generic compression algorithm, and writes results to
@@ -24,7 +24,7 @@ std::size_t memcompress(std::byte *dst, const std::byte *src,
  *
  * @return number of bytes written (i.e., decompressed size)
  */
-std::size_t memdecompress(std::byte *dst, const std::size_t dst_size,
-                          const std::byte *src, const std::size_t src_size);
+std::size_t memdecompress(std::byte *dst, std::size_t dst_size,
+                          const std::byte *src, std::size_t src_size);
 
 } // namespace fqcomp28

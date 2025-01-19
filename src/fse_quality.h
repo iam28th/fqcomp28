@@ -1,7 +1,6 @@
 #pragma once
 #include "defs.h"
 #include "fse_common.hpp"
-#include "utils.h"
 #include <memory>
 
 namespace fqcomp28 {

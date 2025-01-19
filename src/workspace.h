@@ -75,7 +75,7 @@ private:
   void prepareBuffersForEncoding(const FastqChunk &chunk,
                                  CompressedBuffersDst &cbs);
 
-  void encodeHeader(const std::string_view header, CompressedBuffersDst &cbs);
+  void encodeHeader(std::string_view header, CompressedBuffersDst &cbs);
 
   /**
    * Runs additional generic compression on header buffers, readlens, etc.

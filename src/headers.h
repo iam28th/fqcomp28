@@ -36,13 +36,13 @@ struct HeaderFormatSpeciciation {
    * Fills specification (i.e., number and types of fields) from
    * example header
    */
-  static HeaderFormatSpeciciation fromHeader(const std::string_view header);
+  static HeaderFormatSpeciciation fromHeader(std::string_view header);
 };
 
 using header_fields_t = std::vector<headers::field_data_t>;
 
 /** @return Header fields constructed from `header` according to `fmt */
-header_fields_t fromHeader(const std::string_view header,
+header_fields_t fromHeader(std::string_view header,
                            const HeaderFormatSpeciciation &fmt);
 
 /** holds a certain field of multiple headers */

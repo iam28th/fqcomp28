@@ -31,7 +31,7 @@ class Archive {
 public:
   /** Creates Archive to read compressed data from an existing fqcomp28     file
    */
-  explicit Archive(const path_t archive_path);
+  explicit Archive(path_t archive_path);
 
   /**
    * @brief Creates an archive to write compressed data to
@@ -41,8 +41,8 @@ public:
    * @param archive_path Archive creation path
    * @param sample_size_bytes How many bytes to process for calculating meta
    */
-  Archive(const path_t archive_path, const path_t file_to_gather_meta,
-          const std::size_t sample_size_bytes);
+  Archive(path_t archive_path, path_t file_to_gather_meta,
+          std::size_t sample_size_bytes);
 
   void writeBlock(const CompressedBuffersDst &cb);
   bool readBlock(CompressedBuffersSrc &cb);
