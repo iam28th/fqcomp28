@@ -55,7 +55,7 @@ void Archive::writeIndex() {
 }
 
 void Archive::writeBlock(const CompressedBuffersDst &cb) {
-  BlockInfo binfo;
+  BlockInfo binfo = {};
   binfo.idx = cb.chunk_idx;
 
   const std::lock_guard guard(mtx_);
